@@ -1,0 +1,151 @@
+package com.laundrypro.app.viewmodels
+
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.laundrypro.app.models.*
+import com.laundrypro.app.repository.LaundryRepository
+import kotlinx.coroutines.launch
+
+class LaundryViewModel : ViewModel() {
+    private val repository = LaundryRepository()
+
+    val currentUser = MutableLiveData<User?>()
+    val services = MutableLiveData<List<LaundryService>>()
+    val cartItems = MutableLiveData<MutableList<CartItem>>(mutableListOf())
+    val offers = MutableLiveData<List<Offer>>()
+    val orders = MutableLiveData<List<Order>>()
+    val appliedOffer = MutableLiveData<Offer?>()
+
+    init {
+        loadServices()
+        loadOffers()
+    }
+
+    private fun loadServices() {
+        viewModelScope.launch {
+            services.value = repository.getServices()
+        }
+    }
+
+    private fun loadOffers() {
+        viewModelScope.launch {
+            offers.value = repository.getOffers()
+        }
+    }
+
+    fun login(email: String, password: String, callback: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val user = repository.login(email, password)
+                currentUser.value = user
+                loadUserOrders()
+                callback(true, null)
+            } catch (e: Exception) {
+                callback(false, e.message)
+            }
+        }
+    }
+
+    fun register(userData: Map<String, String>, callback: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val user = repository.register(userData)
+                currentUser.value = user
+                callback(true, null)
+            } catch (e: Exception) {
+                callback(false, e.message)
+            }
+        }
+    }
+
+    fun addToCart(item: LaundryItem, serviceId: Int) {
+        val currentCart = cartItems.value ?: mutableListOf()
+        val existingItem = currentCart.find { it.itemId == item.id && it.serviceId == serviceId }
+
+        if (existingItem != null) {
+            existingItem.quantity++
+        } else {
+            currentCart.add(CartItem(item.id, item.name, item.price, 1, serviceId))
+        }
+        cartItems.value = currentCart
+    }
+
+    fun removeFromCart(itemId: String, serviceId: Int) {
+        val currentCart = cartItems.value ?: mutableListOf()
+        currentCart.removeAll { it.itemId == itemId && it.serviceId == serviceId }
+        cartItems.value = currentCart
+    }
+
+    fun updateCartItemQuantity(itemId: String, serviceId: Int, quantity: Int) {
+        val currentCart = cartItems.value ?: mutableListOf()
+        if (quantity <= 0) {
+            removeFromCart(itemId, serviceId)
+        } else {
+            currentCart.find { it.itemId == itemId && it.serviceId == serviceId }?.quantity = quantity
+            cartItems.value = currentCart
+        }
+    }
+
+    fun applyOffer(offerCode: String): Boolean {
+        val offer = offers.value?.find { it.code == offerCode }
+        return if (offer != null) {
+            appliedOffer.value = offer
+            true
+        } else {
+            false
+        }
+    }
+
+    fun calculateTotal(): OrderSummary {
+        val items = cartItems.value ?: mutableListOf()
+        val subtotal = items.sumOf { it.price * it.quantity }
+        val discount = appliedOffer.value?.let { offer ->
+            if (offer.discountPercentage > 0) subtotal * offer.discountPercentage / 100 else 0.0
+        } ?: 0.0
+        val total = subtotal - discount
+
+        return OrderSummary(subtotal, discount, total)
+    }
+
+    fun placeOrder(pickupAddress: String, pickupDateTime: String, callback: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val orderData = OrderData(
+                    userId = currentUser.value?.id ?: "",
+                    items = cartItems.value ?: mutableListOf(),
+                    pickupAddress = pickupAddress,
+                    pickupDateTime = pickupDateTime,
+                    appliedOffer = appliedOffer.value,
+                    totalAmount = calculateTotal().total
+                )
+
+                val order = repository.createOrder(orderData)
+                clearCart()
+                loadUserOrders()
+                callback(true, order.id)
+            } catch (e: Exception) {
+                callback(false, e.message)
+            }
+        }
+    }
+
+    private fun clearCart() {
+        cartItems.value = mutableListOf()
+        appliedOffer.value = null
+    }
+
+    private fun loadUserOrders() {
+        currentUser.value?.let { user ->
+            viewModelScope.launch {
+                orders.value = repository.getUserOrders(user.id)
+            }
+        }
+    }
+
+    fun logout() {
+        currentUser.value = null
+        clearCart()
+        orders.value = emptyList()
+    }
+}

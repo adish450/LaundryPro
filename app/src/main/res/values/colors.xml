@@ -1,0 +1,20 @@
+<resources>
+    <!-- Base App Theme Colors -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Colors Required by Your Layouts -->
+    <color name="primary_color">#FF6200EE</color> <!-- Using your theme's purple -->
+    <color name="text_primary">#DE000000</color>   <!-- 87% Black for primary text -->
+    <color name="text_secondary">#8A000000</color> <!-- 54% Black for secondary text -->
+    <color name="success_color">#4CAF50</color>      <!-- Green for success states -->
+    <color name="success_color_light">#C8E6C9</color> <!-- A light green for backgrounds -->
+    <color name="background_light">#F5F5F5</color>  <!-- A light gray for card backgrounds -->
+    <color name="divider_color">#1F000000</color>   <!-- 12% Black for dividers -->
+    <color name="error_color">#B00020</color>       <!-- A standard red for errors -->
+</resources>

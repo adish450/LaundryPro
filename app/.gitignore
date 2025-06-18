@@ -1,0 +1,26 @@
+# IDE files
+.idea/
+.gradle/
+local.properties
+/build/
+
+# Android Studio generated files
+*.iml
+.DS_Store
+captures/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.apks
+*.dex
+*.class
+
+# Gradle Wrapper
+!gradle-wrapper.jar
+
+# Google Services
+/app/google-services.json
+
+# Log files
+/logs/

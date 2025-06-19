@@ -10,6 +10,9 @@ import kotlinx.coroutines.launch
 class LaundryViewModel : ViewModel() {
     private val repository = LaundryRepository()
 
+    val loginResult = MutableLiveData<LoginResult>(LoginResult.Idle)
+    val registerResult = MutableLiveData<RegisterResult>(RegisterResult.Idle)
+    val navigateToTab = MutableLiveData<Int?>()
     val currentUser = MutableLiveData<User?>()
     val services = MutableLiveData<List<LaundryService>>()
     val cartItems = MutableLiveData<MutableList<CartItem>>(mutableListOf())
@@ -34,27 +37,36 @@ class LaundryViewModel : ViewModel() {
         }
     }
 
-    fun login(email: String, password: String, callback: (Boolean, String?) -> Unit) {
+    fun onNavigateTo(tabIndex: Int) {
+        navigateToTab.value = tabIndex
+    }
+
+    fun onNavigationComplete() {
+        navigateToTab.value = null
+    }
+
+    fun login(email: String, password: String) {
         viewModelScope.launch {
+            loginResult.value = LoginResult.Loading
             try {
                 val user = repository.login(email, password)
                 currentUser.value = user
-                loadUserOrders()
-                callback(true, null)
+                loginResult.value = LoginResult.Success(user)
             } catch (e: Exception) {
-                callback(false, e.message)
+                loginResult.value = LoginResult.Error(e.message ?: "An unknown error occurred")
             }
         }
     }
 
-    fun register(userData: Map<String, String>, callback: (Boolean, String?) -> Unit) {
+    fun register(name: String, email: String, password: String, phone: String) {
         viewModelScope.launch {
+            registerResult.value = RegisterResult.Loading
             try {
-                val user = repository.register(userData)
+                val user = repository.register(name, email, password, phone)
                 currentUser.value = user
-                callback(true, null)
+                registerResult.value = RegisterResult.Success(user)
             } catch (e: Exception) {
-                callback(false, e.message)
+                registerResult.value = RegisterResult.Error(e.message ?: "An unknown error occurred")
             }
         }
     }

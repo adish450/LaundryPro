@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import com.laundrypro.app.databinding.FragmentRegisterBinding
+import com.laundrypro.app.models.RegisterResult
 import com.laundrypro.app.viewmodels.LaundryViewModel
 
 class RegisterFragment : Fragment() {
@@ -22,6 +23,7 @@ class RegisterFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        observeRegisterResult()
 
         binding.btnRegister.setOnClickListener {
             val name = binding.etName.text.toString().trim()
@@ -34,25 +36,42 @@ class RegisterFragment : Fragment() {
                 Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-
             if (password != confirmPassword) {
                 Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            val userData = mapOf("name" to name, "email" to email, "phone" to phone)
-            viewModel.register(userData) { success, message ->
-                if (success) {
-                    Toast.makeText(context, "Registration Successful", Toast.LENGTH_SHORT).show()
-                    activity?.finish()
-                } else {
-                    Toast.makeText(context, "Registration Failed: $message", Toast.LENGTH_SHORT).show()
-                }
-            }
+            viewModel.register(name, email, password, phone)
         }
 
         binding.tvGoToLogin.setOnClickListener {
-            parentFragmentManager.popBackStack()
+            viewModel.onNavigateTo(0) // Navigate to Login tab (index 0)
+        }
+    }
+
+    private fun observeRegisterResult() {
+        viewModel.registerResult.observe(viewLifecycleOwner) { result ->
+            when (result) {
+                is RegisterResult.Loading -> {
+                    binding.btnRegister.isEnabled = false
+                    binding.btnRegister.text = "Registering..."
+                }
+                is RegisterResult.Success -> {
+                    binding.btnRegister.isEnabled = true
+                    binding.btnRegister.text = "Register"
+                    Toast.makeText(context, "Registration Successful!", Toast.LENGTH_SHORT).show()
+                    activity?.finish()
+                }
+                is RegisterResult.Error -> {
+                    binding.btnRegister.isEnabled = true
+                    binding.btnRegister.text = "Register"
+                    Toast.makeText(context, "Registration Failed: ${result.message}", Toast.LENGTH_LONG).show()
+                }
+                is RegisterResult.Idle -> {
+                    binding.btnRegister.isEnabled = true
+                    binding.btnRegister.text = "Register"
+                }
+            }
         }
     }
 

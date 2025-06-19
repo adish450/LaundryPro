@@ -4,9 +4,12 @@ import com.laundrypro.app.models.*
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.*
+import com.laundrypro.app.data.RetrofitInstance
+import com.laundrypro.app.models.*
 
 class LaundryRepository {
 
+    private val apiService = RetrofitInstance.api
     // Mock data - In real app, this would come from API/Database
     private val mockServices = listOf(
         LaundryService(
@@ -59,37 +62,25 @@ class LaundryRepository {
     }
 
     suspend fun login(email: String, password: String): User {
-        delay(1000) // Simulate network call
+        val request = LoginRequest(email, password)
+        val response = apiService.login(request)
 
-        // Mock validation
-        if (email.isNotEmpty() && password.isNotEmpty()) {
-            return User(
-                id = "user_${System.currentTimeMillis()}",
-                name = "John Doe",
-                email = email,
-                phone = "+1234567890",
-                addresses = listOf(
-                    Address("addr1", "Home", "123 Main St, City, State 12345", true)
-                )
-            )
+        if (response.isSuccessful) {
+            return response.body()?.user ?: throw Exception("User data not found in login response")
         } else {
-            throw Exception("Invalid credentials")
+            throw Exception("Login failed: ${response.message()}")
         }
     }
 
-    suspend fun register(userData: Map<String, String>): User {
-        delay(1000)
+    suspend fun register(name: String, email: String, password: String, phone: String): User {
+        val request = RegisterRequest(name, email, password, phone)
+        val response = apiService.register(request)
 
-        val name = userData["name"] ?: throw Exception("Name is required")
-        val email = userData["email"] ?: throw Exception("Email is required")
-        val phone = userData["phone"] ?: throw Exception("Phone is required")
-
-        return User(
-            id = "user_${System.currentTimeMillis()}",
-            name = name,
-            email = email,
-            phone = phone
-        )
+        if (response.isSuccessful) {
+            return response.body()?.user ?: throw Exception("User data not found in register response")
+        } else {
+            throw Exception("Registration failed: ${response.message()}")
+        }
     }
 
     suspend fun createOrder(orderData: OrderData): Order {

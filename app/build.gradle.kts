@@ -55,6 +55,10 @@ dependencies {
     // RecyclerView for lists
     implementation(libs.androidx.recyclerview)
 
+    // Retrofit for networking
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

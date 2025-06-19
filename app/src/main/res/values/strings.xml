@@ -11,4 +11,8 @@
     <string name="phone_number">Phone Number</string>
     <string name="full_name">Full Name</string>
     <string name="create_an_account">Create an Account</string>
+    <string name="laundry_pro_logo">Laundry Pro Logo</string>
+    <string name="laundry_pro">Laundry Pro</string>
+    <string name="login_to_your_account">Login to your account</string>
+    <string name="new_user_register_here">New User? Register here.</string>
 </resources>

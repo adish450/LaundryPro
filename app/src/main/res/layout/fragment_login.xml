@@ -6,11 +6,27 @@
     android:orientation="vertical"
     android:padding="16dp">
 
+    <!-- THIS IS THE NEW PART -->
+    <ImageView
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:src="@drawable/ic_logo_professional_crest_circular"
+        android:contentDescription="@string/laundry_pro_logo" />
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/login_to_laundrypro"
-        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+        android:layout_marginTop="8dp"
+        android:text="@string/laundry_pro"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5" />
+    <!-- END OF NEW PART -->
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/login_to_your_account"
+        android:layout_marginTop="8dp"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Body1" />
 
     <EditText
         android:id="@+id/et_email"
@@ -40,7 +56,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="@string/new_user_register_here_text"
+        android:text="@string/new_user_register_here"
         android:textColor="?attr/colorPrimary" />
 
 </LinearLayout>

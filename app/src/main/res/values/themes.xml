@@ -8,4 +8,8 @@
         <item name="colorOnSecondary">@color/black</item>
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
     </style>
+    <style name="Theme.LaundryPro.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
 </resources>

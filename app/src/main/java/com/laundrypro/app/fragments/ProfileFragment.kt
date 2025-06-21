@@ -58,7 +58,7 @@ class ProfileFragment : Fragment() {
                 binding.tvUserPhone.text = user.phone
 
                 // Find default address and display it
-                val defaultAddress = user.addresses.find { it.isDefault }?.fullAddress
+                val defaultAddress = user.addresses?.find { it.isDefault }?.fullAddress
                 binding.textUserAddress.text = defaultAddress ?: "No default address set."
 
                 binding.btnLogout.visibility = View.VISIBLE

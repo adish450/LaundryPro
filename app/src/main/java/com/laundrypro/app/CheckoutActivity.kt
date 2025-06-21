@@ -51,7 +51,7 @@ class CheckoutActivity : AppCompatActivity() {
         // Observe user to populate address spinner
         viewModel.currentUser.observe(this) { user ->
             user?.let {
-                val addresses = it.addresses.map { address -> address.fullAddress }
+                val addresses = it.addresses?.map { address -> address.fullAddress } ?: emptyList()
                 val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, addresses)
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 binding.spinnerAddress.adapter = adapter

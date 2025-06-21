@@ -3,6 +3,7 @@ package com.laundrypro.app.viewmodels
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.laundrypro.app.data.SessionManager
 import com.laundrypro.app.models.*
 import com.laundrypro.app.repository.LaundryRepository
 import kotlinx.coroutines.launch
@@ -23,6 +24,7 @@ class LaundryViewModel : ViewModel() {
     init {
         loadServices()
         loadOffers()
+        checkUserSession()
     }
 
     private fun loadServices() {
@@ -37,6 +39,14 @@ class LaundryViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Checks SharedPreferences for a saved user session and updates currentUser.
+     * This is public so MainActivity can call it in onResume.
+     */
+    fun checkUserSession() {
+        currentUser.value = SessionManager.getUser()
+    }
+
     fun onNavigateTo(tabIndex: Int) {
         navigateToTab.value = tabIndex
     }
@@ -49,9 +59,10 @@ class LaundryViewModel : ViewModel() {
         viewModelScope.launch {
             loginResult.value = LoginResult.Loading
             try {
-                val user = repository.login(email, password)
-                currentUser.value = user
-                loginResult.value = LoginResult.Success(user)
+                val response = repository.login(email, password)
+                SessionManager.saveLoginDetails(response.token, response.user)
+                currentUser.value = response.user // Update state
+                loginResult.value = LoginResult.Success(response.user)
             } catch (e: Exception) {
                 loginResult.value = LoginResult.Error(e.message ?: "An unknown error occurred")
             }
@@ -62,9 +73,15 @@ class LaundryViewModel : ViewModel() {
         viewModelScope.launch {
             registerResult.value = RegisterResult.Loading
             try {
-                val user = repository.register(name, email, password, phone)
-                currentUser.value = user
-                registerResult.value = RegisterResult.Success(user)
+                val response = repository.register(name, email, password, phone)
+                // After successful registration, save user session and auto-login
+                // You might need to adjust your RegisterResponse to include a token
+                // For now, assuming registration doesn't return a token to save.
+                // If it does, save it like in the login function.
+                SessionManager.saveLoginDetails(response.token, response.user)
+                currentUser.value = response.user
+                registerResult.value = RegisterResult.Success(response.user)
+                loginResult.value = LoginResult.Success(response.user)
             } catch (e: Exception) {
                 registerResult.value = RegisterResult.Error(e.message ?: "An unknown error occurred")
             }
@@ -156,8 +173,10 @@ class LaundryViewModel : ViewModel() {
     }
 
     fun logout() {
+        SessionManager.clear()
         currentUser.value = null
-        clearCart()
-        orders.value = emptyList()
+        // Reset states
+        loginResult.value = LoginResult.Idle
+        registerResult.value = RegisterResult.Idle
     }
 }

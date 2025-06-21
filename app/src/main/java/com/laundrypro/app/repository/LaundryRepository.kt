@@ -60,25 +60,28 @@ class LaundryRepository {
         return mockOffers
     }
 
-    suspend fun login(email: String, password: String): User {
+    suspend fun login(email: String, password: String): LoginResponse {
         val request = LoginRequest(email, password)
         val response = apiService?.login(request)
 
         if (response?.isSuccessful == true) {
-            return response.body()?.user ?: throw Exception("User data not found in login response")
+            return response.body() ?: throw Exception("Empty response body")
         } else {
-            throw Exception("Login failed: ${response?.message()}")
+            val errorBody = response?.errorBody()?.string()
+            throw Exception(errorBody ?: "Login failed with status code: ${response?.code()}")
+
         }
     }
 
-    suspend fun register(name: String, email: String, password: String, phone: String): User {
-        val request = RegisterRequest(name, email, phone, password)
+    suspend fun register(name: String, email: String, password: String, phone: String): RegisterResponse {
+        val request = RegisterRequest(name, email, password, phone)
         val response = apiService?.register(request)
 
         if (response?.isSuccessful == true) {
-            return response.body()?.user ?: throw Exception("User data not found in register response")
+            return response.body() ?: throw Exception("Empty response body")
         } else {
-            throw Exception("Registration failed: ${response?.message()}")
+            val errorBody = response?.errorBody()?.string()
+            throw Exception(errorBody ?: "Registration failed with status code: ${response?.code()}")
         }
     }
 

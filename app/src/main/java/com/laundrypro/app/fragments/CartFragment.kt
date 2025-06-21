@@ -1,11 +1,13 @@
 package com.laundrypro.app.fragments
 
+import android.app.Activity.RESULT_OK
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -21,6 +23,16 @@ class CartFragment : Fragment() {
 
     private val viewModel: LaundryViewModel by activityViewModels()
     private lateinit var cartAdapter: CartAdapter
+
+    private val authLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        // This callback runs when we return from AuthActivity
+        if (result.resultCode == RESULT_OK) {
+            // The user successfully logged in. Refresh the session state.
+            viewModel.checkUserSession()
+            // Now, we can safely proceed to checkout.
+            goToCheckout()
+        }
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentCartBinding.inflate(inflater, container, false)
@@ -64,13 +76,19 @@ class CartFragment : Fragment() {
 
         binding.btnCheckout.setOnClickListener {
             if (viewModel.currentUser.value != null) {
-                val intent = Intent(activity, CheckoutActivity::class.java)
-                startActivity(intent)
+                // If user is already logged in, go directly to checkout
+                goToCheckout()
             } else {
+                // If user is not logged in, launch the AuthActivity using our launcher
                 val intent = Intent(activity, AuthActivity::class.java)
-                startActivity(intent)
+                authLauncher.launch(intent)
             }
         }
+    }
+
+    private fun goToCheckout() {
+        val intent = Intent(activity, CheckoutActivity::class.java)
+        startActivity(intent)
     }
 
     private fun observeViewModel() {

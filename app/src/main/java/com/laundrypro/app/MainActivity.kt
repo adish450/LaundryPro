@@ -4,37 +4,39 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.laundrypro.app.databinding.ActivityMainBinding
 import com.laundrypro.app.fragments.*
-import com.laundrypro.app.models.User
 import com.laundrypro.app.viewmodels.LaundryViewModel
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
-    private lateinit var viewModel: LaundryViewModel
+    private val viewModel: LaundryViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        viewModel = ViewModelProvider(this)[LaundryViewModel::class.java]
-
+        // The 'by viewModels()' delegate handles creating the ViewModel correctly
         setupBottomNavigation()
 
-        // Load home fragment by default
         if (savedInstanceState == null) {
             loadFragment(HomeFragment())
         }
 
-        // Observe user login state
         viewModel.currentUser.observe(this) { user ->
             invalidateOptionsMenu()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // This is the key fix: Refresh the user session every time
+        // the activity comes to the foreground (e.g., after returning from login).
+        viewModel.checkUserSession()
     }
 
     private fun setupBottomNavigation() {

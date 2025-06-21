@@ -61,6 +61,8 @@ dependencies {
 
     implementation(libs.gson)
 
+    implementation(libs.material)
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

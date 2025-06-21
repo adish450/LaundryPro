@@ -12,7 +12,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.laundrypro.app.AuthActivity
-import com.laundrypro.app.CheckoutActivity
+import com.laundrypro.app.R
 import com.laundrypro.app.adapters.CartAdapter
 import com.laundrypro.app.databinding.FragmentCartBinding
 import com.laundrypro.app.viewmodels.LaundryViewModel
@@ -76,10 +76,9 @@ class CartFragment : Fragment() {
 
         binding.btnCheckout.setOnClickListener {
             if (viewModel.currentUser.value != null) {
-                // If user is already logged in, go directly to checkout
                 goToCheckout()
             } else {
-                // If user is not logged in, launch the AuthActivity using our launcher
+                // The ActivityResultLauncher logic for login remains the same
                 val intent = Intent(activity, AuthActivity::class.java)
                 authLauncher.launch(intent)
             }
@@ -87,8 +86,11 @@ class CartFragment : Fragment() {
     }
 
     private fun goToCheckout() {
-        val intent = Intent(activity, CheckoutActivity::class.java)
-        startActivity(intent)
+        // This is the updated navigation logic
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, CheckoutFragment())
+            .addToBackStack(null) // This allows the user to press back to return to the cart
+            .commit()
     }
 
     private fun observeViewModel() {

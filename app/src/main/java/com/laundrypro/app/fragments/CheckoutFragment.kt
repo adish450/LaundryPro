@@ -1,66 +1,72 @@
-package com.laundrypro.app
+package com.laundrypro.app.fragments
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Toast
-import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.laundrypro.app.adapters.CheckoutItemsAdapter
-import com.laundrypro.app.databinding.ActivityCheckoutBinding
+import com.laundrypro.app.databinding.FragmentCheckoutBinding
 import com.laundrypro.app.viewmodels.LaundryViewModel
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.Locale
 
-class CheckoutActivity : AppCompatActivity() {
+class CheckoutFragment : Fragment() {
 
-    private lateinit var binding: ActivityCheckoutBinding
-    private val viewModel: LaundryViewModel by viewModels()
+    private var _binding: FragmentCheckoutBinding? = null
+    private val binding get() = _binding!!
+    private val viewModel: LaundryViewModel by activityViewModels()
     private var selectedDate: Calendar = Calendar.getInstance()
     private var selectedTime: Calendar = Calendar.getInstance()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityCheckoutBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentCheckoutBinding.inflate(inflater, container, false)
+        return binding.root
+    }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         setupToolbar()
         setupClickListeners()
         observeViewModel()
     }
 
     private fun setupToolbar() {
-        setSupportActionBar(binding.toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = "Confirm Order"
+        binding.toolbar.setNavigationOnClickListener {
+            // Handle back navigation
+            parentFragmentManager.popBackStack()
+        }
     }
 
     private fun observeViewModel() {
-        // Observe cart items to display them
-        viewModel.cartItems.observe(this) { items ->
-            if (items.isNotEmpty()) {
-                val adapter = CheckoutItemsAdapter(items)
-                binding.recyclerOrderItems.layoutManager = LinearLayoutManager(this)
-                binding.recyclerOrderItems.adapter = adapter
+        viewModel.cartItems.observe(viewLifecycleOwner) { items ->
+            if (!items.isNullOrEmpty()) {
+                binding.recyclerOrderItems.adapter = CheckoutItemsAdapter(items)
+                binding.recyclerOrderItems.layoutManager = LinearLayoutManager(context)
             }
         }
 
-        // Observe user to populate address spinner
-        viewModel.currentUser.observe(this) { user ->
-            user?.let {
-                val addresses = it.addresses?.map { address -> address.fullAddress } ?: emptyList()
-                val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, addresses)
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        viewModel.currentUser.observe(viewLifecycleOwner) { user ->
+            user?.addresses?.let {
+                val addresses = it.map { address -> address.fullAddress }
+                val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, addresses)
                 binding.spinnerAddress.adapter = adapter
             }
         }
 
         // Observe cart items and applied offer to update pricing summary
-        viewModel.cartItems.observe(this) { updatePricing() }
-        viewModel.appliedOffer.observe(this) { updatePricing() }
+        activity?.let { viewModel.cartItems.observe(it) { updatePricing() } }
+        activity?.let { viewModel.appliedOffer.observe(it) { updatePricing() } }
     }
 
     private fun setupClickListeners() {
@@ -69,11 +75,11 @@ class CheckoutActivity : AppCompatActivity() {
 
         binding.btnPlaceOrder.setOnClickListener {
             if (binding.spinnerAddress.selectedItem == null) {
-                Toast.makeText(this, "Please select a pickup address", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Please select a pickup address", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             if (binding.textSelectedDate.text.isBlank() || binding.textSelectedTime.text.isBlank()) {
-                Toast.makeText(this, "Please select a pickup date and time", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Please select a pickup date and time", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -82,10 +88,10 @@ class CheckoutActivity : AppCompatActivity() {
 
             viewModel.placeOrder(address, pickupDateTime) { success, message ->
                 if (success) {
-                    Toast.makeText(this, "Order placed successfully! ID: $message", Toast.LENGTH_LONG).show()
-                    finish()
+                    Toast.makeText(context, "Order placed successfully! ID: $message", Toast.LENGTH_LONG).show()
+                    //add logic to place order
                 } else {
-                    Toast.makeText(this, "Failed to place order: $message", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Failed to place order: $message", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -99,10 +105,13 @@ class CheckoutActivity : AppCompatActivity() {
             val format = SimpleDateFormat("yyyy-MM-dd", Locale.US)
             binding.textSelectedDate.text = format.format(selectedDate.time)
         }
-        DatePickerDialog(this, dateSetListener,
-            selectedDate.get(Calendar.YEAR),
-            selectedDate.get(Calendar.MONTH),
-            selectedDate.get(Calendar.DAY_OF_MONTH)).show()
+        context?.let {
+            DatePickerDialog(
+                it, dateSetListener,
+                selectedDate.get(Calendar.YEAR),
+                selectedDate.get(Calendar.MONTH),
+                selectedDate.get(Calendar.DAY_OF_MONTH)).show()
+        }
     }
 
     private fun showTimePicker() {
@@ -112,7 +121,7 @@ class CheckoutActivity : AppCompatActivity() {
             val format = SimpleDateFormat("hh:mm a", Locale.US)
             binding.textSelectedTime.text = format.format(selectedTime.time)
         }
-        TimePickerDialog(this, timeSetListener,
+        TimePickerDialog(activity, timeSetListener,
             selectedTime.get(Calendar.HOUR_OF_DAY),
             selectedTime.get(Calendar.MINUTE),
             false).show()
@@ -127,8 +136,8 @@ class CheckoutActivity : AppCompatActivity() {
         binding.discountRow.visibility = if (summary.discount > 0) View.VISIBLE else View.GONE
     }
 
-    override fun onSupportNavigateUp(): Boolean {
-        onBackPressedDispatcher.onBackPressed()
-        return true
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

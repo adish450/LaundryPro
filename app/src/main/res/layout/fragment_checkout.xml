@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".CheckoutActivity">
+    android:background="?android:colorBackground"
+    tools:context=".fragments.CheckoutFragment">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -14,8 +15,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
-            app:titleTextColor="@color/white" />
+            app:title="Confirm Order" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <ScrollView

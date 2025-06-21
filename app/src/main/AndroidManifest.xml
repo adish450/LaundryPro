@@ -29,10 +29,6 @@
         <activity
             android:name=".AuthActivity"
             android:exported="false" />
-        <activity
-            android:name=".CheckoutActivity"
-            android:exported="false"
-            android:parentActivityName=".MainActivity" />
 
     </application>
 

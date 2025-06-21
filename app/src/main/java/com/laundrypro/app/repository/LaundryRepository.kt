@@ -1,15 +1,14 @@
 package com.laundrypro.app.repository
 
+import com.laundrypro.app.data.RetrofitInstance
 import com.laundrypro.app.models.*
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.*
-import com.laundrypro.app.data.RetrofitInstance
-import com.laundrypro.app.models.*
 
 class LaundryRepository {
 
-    private val apiService = RetrofitInstance.api
+    private val apiService = RetrofitInstance.service
     // Mock data - In real app, this would come from API/Database
     private val mockServices = listOf(
         LaundryService(
@@ -63,23 +62,23 @@ class LaundryRepository {
 
     suspend fun login(email: String, password: String): User {
         val request = LoginRequest(email, password)
-        val response = apiService.login(request)
+        val response = apiService?.login(request)
 
-        if (response.isSuccessful) {
+        if (response?.isSuccessful == true) {
             return response.body()?.user ?: throw Exception("User data not found in login response")
         } else {
-            throw Exception("Login failed: ${response.message()}")
+            throw Exception("Login failed: ${response?.message()}")
         }
     }
 
     suspend fun register(name: String, email: String, password: String, phone: String): User {
-        val request = RegisterRequest(name, email, password, phone)
-        val response = apiService.register(request)
+        val request = RegisterRequest(name, email, phone, password)
+        val response = apiService?.register(request)
 
-        if (response.isSuccessful) {
+        if (response?.isSuccessful == true) {
             return response.body()?.user ?: throw Exception("User data not found in register response")
         } else {
-            throw Exception("Registration failed: ${response.message()}")
+            throw Exception("Registration failed: ${response?.message()}")
         }
     }
 

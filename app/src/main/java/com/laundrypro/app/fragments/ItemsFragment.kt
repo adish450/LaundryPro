@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -24,17 +25,19 @@ class ItemsFragment : Fragment() {
         private const val ARG_SERVICE_ID = "service_id"
 
         fun newInstance(serviceId: Int): ItemsFragment {
-            val fragment = ItemsFragment()
-            val args = Bundle()
-            args.putInt(ARG_SERVICE_ID, serviceId)
-            fragment.arguments = args
-            return fragment
+            return ItemsFragment().apply {
+                arguments = Bundle().apply {
+                    putInt(ARG_SERVICE_ID, serviceId)
+                }
+            }
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        serviceId = arguments?.getInt(ARG_SERVICE_ID) ?: 0
+        arguments?.let {
+            serviceId = it.getInt(ARG_SERVICE_ID)
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -57,8 +60,10 @@ class ItemsFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
+        // This is the fix: The adapter's click listener now calls the ViewModel
         itemsAdapter = ItemsAdapter { item ->
             viewModel.addToCart(item, serviceId)
+            Toast.makeText(context, "${item.name} added to cart", Toast.LENGTH_SHORT).show()
         }
         binding.recyclerItems.layoutManager = LinearLayoutManager(context)
         binding.recyclerItems.adapter = itemsAdapter
@@ -74,9 +79,13 @@ class ItemsFragment : Fragment() {
         }
 
         viewModel.cartItems.observe(viewLifecycleOwner) { cartItems ->
-            val itemCount = cartItems.sumOf { it.quantity }
-            binding.btnViewCart.text = "View Cart ($itemCount items)"
-            binding.btnViewCart.visibility = if (itemCount > 0) View.VISIBLE else View.GONE
+            val itemCount = cartItems?.sumOf { it.quantity } ?: 0
+            if (itemCount > 0) {
+                binding.btnViewCart.text = "View Cart ($itemCount items)"
+                binding.btnViewCart.visibility = View.VISIBLE
+            } else {
+                binding.btnViewCart.visibility = View.GONE
+            }
         }
     }
 

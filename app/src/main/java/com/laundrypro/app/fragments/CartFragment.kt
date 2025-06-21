@@ -1,6 +1,5 @@
 package com.laundrypro.app.fragments
 
-import android.app.Activity.RESULT_OK
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -25,11 +24,8 @@ class CartFragment : Fragment() {
     private lateinit var cartAdapter: CartAdapter
 
     private val authLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        // This callback runs when we return from AuthActivity
-        if (result.resultCode == RESULT_OK) {
-            // The user successfully logged in. Refresh the session state.
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
             viewModel.checkUserSession()
-            // Now, we can safely proceed to checkout.
             goToCheckout()
         }
     }
@@ -48,9 +44,10 @@ class CartFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
+        // This is the fix: The adapter's callbacks are now implemented
         cartAdapter = CartAdapter(
-            onQuantityChanged = { itemId, serviceId, quantity ->
-                viewModel.updateCartItemQuantity(itemId, serviceId, quantity)
+            onQuantityChanged = { itemId, serviceId, newQuantity ->
+                viewModel.updateCartItemQuantity(itemId, serviceId, newQuantity)
             },
             onItemRemoved = { itemId, serviceId ->
                 viewModel.removeFromCart(itemId, serviceId)
@@ -64,10 +61,8 @@ class CartFragment : Fragment() {
         binding.btnApplyOffer.setOnClickListener {
             val offerCode = binding.etOfferCode.text.toString().trim()
             if (offerCode.isNotEmpty()) {
-                val applied = viewModel.applyOffer(offerCode)
-                if (applied) {
+                if (viewModel.applyOffer(offerCode)) {
                     Toast.makeText(context, "Offer applied successfully!", Toast.LENGTH_SHORT).show()
-                    binding.etOfferCode.text?.clear()
                 } else {
                     Toast.makeText(context, "Invalid offer code", Toast.LENGTH_SHORT).show()
                 }
@@ -78,7 +73,6 @@ class CartFragment : Fragment() {
             if (viewModel.currentUser.value != null) {
                 goToCheckout()
             } else {
-                // The ActivityResultLauncher logic for login remains the same
                 val intent = Intent(activity, AuthActivity::class.java)
                 authLauncher.launch(intent)
             }
@@ -86,30 +80,23 @@ class CartFragment : Fragment() {
     }
 
     private fun goToCheckout() {
-        // This is the updated navigation logic
         parentFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, CheckoutFragment())
-            .addToBackStack(null) // This allows the user to press back to return to the cart
+            .addToBackStack(null)
             .commit()
     }
 
     private fun observeViewModel() {
         viewModel.cartItems.observe(viewLifecycleOwner) { cartItems ->
-            cartAdapter.updateCart(cartItems)
-            binding.emptyCartLayout.visibility = if (cartItems.isEmpty()) View.VISIBLE else View.GONE
-            binding.cartContentLayout.visibility = if (cartItems.isEmpty()) View.GONE else View.VISIBLE
+            cartAdapter.updateCart(cartItems ?: emptyList())
+            binding.emptyCartLayout.visibility = if (cartItems.isNullOrEmpty()) View.VISIBLE else View.GONE
+            binding.cartContentLayout.visibility = if (cartItems.isNullOrEmpty()) View.GONE else View.VISIBLE
+            updatePricing()
         }
 
         viewModel.appliedOffer.observe(viewLifecycleOwner) { offer ->
             binding.appliedOfferText.text = offer?.title ?: ""
             binding.appliedOfferText.visibility = if (offer != null) View.VISIBLE else View.GONE
-        }
-
-        // Update pricing
-        viewModel.cartItems.observe(viewLifecycleOwner) {
-            updatePricing()
-        }
-        viewModel.appliedOffer.observe(viewLifecycleOwner) {
             updatePricing()
         }
     }

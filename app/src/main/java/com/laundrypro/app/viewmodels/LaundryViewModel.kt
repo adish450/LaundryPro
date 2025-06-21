@@ -3,6 +3,7 @@ package com.laundrypro.app.viewmodels
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.laundrypro.app.data.CartManager
 import com.laundrypro.app.data.SessionManager
 import com.laundrypro.app.models.*
 import com.laundrypro.app.repository.LaundryRepository
@@ -16,10 +17,12 @@ class LaundryViewModel : ViewModel() {
     val navigateToTab = MutableLiveData<Int?>()
     val currentUser = MutableLiveData<User?>()
     val services = MutableLiveData<List<LaundryService>>()
-    val cartItems = MutableLiveData<MutableList<CartItem>>(mutableListOf())
     val offers = MutableLiveData<List<Offer>>()
     val orders = MutableLiveData<List<Order>>()
-    val appliedOffer = MutableLiveData<Offer?>()
+
+    // Delegate all cart-related LiveData and functions to the singleton CartManager
+    val cartItems = CartManager.cartItems
+    val appliedOffer = CartManager.appliedOffer
 
     init {
         loadServices()
@@ -89,37 +92,22 @@ class LaundryViewModel : ViewModel() {
     }
 
     fun addToCart(item: LaundryItem, serviceId: Int) {
-        val currentCart = cartItems.value ?: mutableListOf()
-        val existingItem = currentCart.find { it.itemId == item.id && it.serviceId == serviceId }
-
-        if (existingItem != null) {
-            existingItem.quantity++
-        } else {
-            currentCart.add(CartItem(item.id, item.name, item.price, 1, serviceId))
-        }
-        cartItems.value = currentCart
+        CartManager.addToCart(item, serviceId)
     }
 
     fun removeFromCart(itemId: String, serviceId: Int) {
-        val currentCart = cartItems.value ?: mutableListOf()
-        currentCart.removeAll { it.itemId == itemId && it.serviceId == serviceId }
-        cartItems.value = currentCart
+        CartManager.removeFromCart(itemId, serviceId)
     }
 
     fun updateCartItemQuantity(itemId: String, serviceId: Int, quantity: Int) {
-        val currentCart = cartItems.value ?: mutableListOf()
-        if (quantity <= 0) {
-            removeFromCart(itemId, serviceId)
-        } else {
-            currentCart.find { it.itemId == itemId && it.serviceId == serviceId }?.quantity = quantity
-            cartItems.value = currentCart
-        }
+        CartManager.updateCartItemQuantity(itemId, serviceId, quantity)
     }
 
     fun applyOffer(offerCode: String): Boolean {
+        // This logic can stay here if it depends on other ViewModel data
         val offer = offers.value?.find { it.code == offerCode }
         return if (offer != null) {
-            appliedOffer.value = offer
+            CartManager.applyOffer(offer)
             true
         } else {
             false
@@ -127,14 +115,7 @@ class LaundryViewModel : ViewModel() {
     }
 
     fun calculateTotal(): OrderSummary {
-        val items = cartItems.value ?: mutableListOf()
-        val subtotal = items.sumOf { it.price * it.quantity }
-        val discount = appliedOffer.value?.let { offer ->
-            if (offer.discountPercentage > 0) subtotal * offer.discountPercentage / 100 else 0.0
-        } ?: 0.0
-        val total = subtotal - discount
-
-        return OrderSummary(subtotal, discount, total)
+        return CartManager.calculateTotal()
     }
 
     fun placeOrder(pickupAddress: String, pickupDateTime: String, callback: (Boolean, String?) -> Unit) {
@@ -149,9 +130,13 @@ class LaundryViewModel : ViewModel() {
                     totalAmount = calculateTotal().total
                 )
 
+                // Assuming repository.createOrder is a suspend function
                 val order = repository.createOrder(orderData)
-                clearCart()
-                loadUserOrders()
+
+                // This is the fix: Clear the cart after a successful order
+                CartManager.clearCart()
+
+                // loadUserOrders() // You might want to implement this
                 callback(true, order.id)
             } catch (e: Exception) {
                 callback(false, e.message)

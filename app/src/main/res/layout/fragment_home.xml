@@ -1,93 +1,110 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    tools:context=".fragments.HomeFragment">
 
-    <LinearLayout
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
-
-        <!-- Header -->
-        <LinearLayout
+        android:layout_height="wrap_content">
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="LaundryPro"
-                android:textColor="@color/primary_color"
-                android:textSize="24sp"
-                android:textStyle="bold" />
+            android:layout_height="?attr/actionBarSize"
+            app:title="Laundry Pro">
 
             <FrameLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content">
+                android:id="@+id/cart_icon_container"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="end"
+                android:layout_marginEnd="16dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true">
 
                 <ImageView
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    android:src="@drawable/ic_cart"
-                    android:tint="@color/primary_color" />
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_shopping_cart"
+                    android:contentDescription="Shopping Cart"/>
 
                 <TextView
                     android:id="@+id/cart_badge"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
                     android:layout_gravity="top|end"
-                    android:background="@drawable/circle_red"
+                    android:layout_marginEnd="4dp"
+                    android:layout_marginTop="4dp"
+                    android:background="@drawable/bg_cart_badge"
                     android:gravity="center"
                     android:textColor="@color/white"
-                    android:textSize="12sp"
-                    android:visibility="gone" />
+                    android:textSize="10sp"
+                    android:visibility="gone"
+                    tools:text="3"
+                    tools:visibility="visible" />
             </FrameLayout>
 
+        </androidx.appcompat.widget.Toolbar>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Special Offers"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="8dp"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_offers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:clipToPadding="false"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/item_offer"
+                tools:itemCount="3"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Our Services"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="8dp"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_services"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                app:spanCount="2"
+                tools:listitem="@layout/item_service"
+                tools:itemCount="4"/>
+
         </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
-        <!-- Offers Section -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="Special Offers"
-            android:textColor="@color/text_primary"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_offers"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="horizontal"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            tools:listitem="@layout/item_offer" />
-
-        <!-- Services Section -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:text="Our Services"
-            android:textColor="@color/text_primary"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_services"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            tools:listitem="@layout/item_service" />
-
-    </LinearLayout>
-
-</androidx.core.widget.NestedScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

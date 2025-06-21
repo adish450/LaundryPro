@@ -31,6 +31,12 @@ class HomeFragment : Fragment() {
 
         setupRecyclerViews()
         observeViewModel()
+        binding.cartIconContainer.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, CartFragment())
+                .addToBackStack(null)
+                .commit()
+        }
     }
 
     private fun setupRecyclerViews() {
@@ -64,9 +70,13 @@ class HomeFragment : Fragment() {
         }
 
         viewModel.cartItems.observe(viewLifecycleOwner) { cartItems ->
-            val itemCount = cartItems.sumOf { it.quantity }
-            binding.cartBadge.text = if (itemCount > 0) itemCount.toString() else ""
-            binding.cartBadge.visibility = if (itemCount > 0) View.VISIBLE else View.GONE
+            val itemCount = cartItems?.sumOf { it.quantity } ?: 0
+            if (itemCount > 0) {
+                itemCount.toString().also { binding.cartBadge.text = it }
+                binding.cartBadge.visibility = View.VISIBLE
+            } else {
+                binding.cartBadge.visibility = View.GONE
+            }
         }
     }
 

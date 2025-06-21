@@ -7,8 +7,11 @@ import android.view.MenuItem
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.laundrypro.app.databinding.ActivityMainBinding
 import com.laundrypro.app.fragments.*
+import com.laundrypro.app.models.User
 import com.laundrypro.app.viewmodels.LaundryViewModel
 
 class MainActivity : AppCompatActivity() {

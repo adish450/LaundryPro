@@ -32,12 +32,6 @@ object CartManager {
         editor.apply()
     }
 
-    private fun clear() {
-        val editor = prefs.edit()
-        editor.remove(CART_ITEMS_KEY)
-        editor.apply()
-    }
-
     private fun loadCart() {
         val cartJson = prefs.getString(CART_ITEMS_KEY, null)
         if (cartJson != null) {
@@ -88,7 +82,7 @@ object CartManager {
     fun clearCart() {
         cartItems.postValue(mutableListOf())
         appliedOffer.postValue(null)
-        clear()
+        saveCart()
     }
 
     fun applyOffer(offer: Offer) {

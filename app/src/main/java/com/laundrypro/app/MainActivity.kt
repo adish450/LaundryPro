@@ -2,16 +2,11 @@ package com.laundrypro.app
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.laundrypro.app.databinding.ActivityMainBinding
 import com.laundrypro.app.fragments.*
-import com.laundrypro.app.models.User
 import com.laundrypro.app.viewmodels.LaundryViewModel
 
 class MainActivity : AppCompatActivity() {
@@ -23,23 +18,27 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // The 'by viewModels()' delegate handles creating the ViewModel correctly
         setupBottomNavigation()
 
         if (savedInstanceState == null) {
             loadFragment(HomeFragment())
         }
 
-        viewModel.currentUser.observe(this) { user ->
-            invalidateOptionsMenu()
-        }
+        observeNavigation()
     }
 
     override fun onResume() {
         super.onResume()
-        // This is the key fix: Refresh the user session every time
-        // the activity comes to the foreground (e.g., after returning from login).
         viewModel.checkUserSession()
+    }
+
+    private fun observeNavigation() {
+        viewModel.navigateToHome.observe(this) { navigate ->
+            if (navigate == true) {
+                binding.bottomNavigation.selectedItemId = R.id.nav_home
+                viewModel.onHomeNavigationComplete()
+            }
+        }
     }
 
     private fun setupBottomNavigation() {
@@ -49,25 +48,21 @@ class MainActivity : AppCompatActivity() {
                     loadFragment(HomeFragment())
                     true
                 }
-                R.id.nav_orders -> {
-                    if (viewModel.currentUser.value != null) {
-                        loadFragment(OrdersFragment())
-                    } else {
-                        startActivity(Intent(this, AuthActivity::class.java))
-                    }
-                    true
-                }
                 R.id.nav_cart -> {
                     loadFragment(CartFragment())
                     true
                 }
-                R.id.nav_profile -> {
+                R.id.nav_orders, R.id.nav_profile -> {
                     if (viewModel.currentUser.value != null) {
-                        loadFragment(ProfileFragment())
+                        // User is logged in, navigate to the selected fragment
+                        val fragment = if (item.itemId == R.id.nav_orders) OrdersFragment() else ProfileFragment()
+                        loadFragment(fragment)
+                        true
                     } else {
+                        // User is not logged in, launch AuthActivity to prompt for login
                         startActivity(Intent(this, AuthActivity::class.java))
+                        false // Return false to prevent the tab selection from changing
                     }
-                    true
                 }
                 else -> false
             }
@@ -78,24 +73,5 @@ class MainActivity : AppCompatActivity() {
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
             .commit()
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.main_menu, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_notifications -> {
-                // Handle notifications
-                true
-            }
-            R.id.action_login -> {
-                startActivity(Intent(this, AuthActivity::class.java))
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
     }
 }

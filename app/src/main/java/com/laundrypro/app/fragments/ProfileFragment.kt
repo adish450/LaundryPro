@@ -1,31 +1,25 @@
 package com.laundrypro.app.fragments
 
-import android.content.Intent
 import android.os.Bundle
-import android.view.*
+import android.view.View
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import com.laundrypro.app.AuthActivity
 import com.laundrypro.app.R
 import com.laundrypro.app.databinding.FragmentProfileBinding
 import com.laundrypro.app.viewmodels.LaundryViewModel
 
-class ProfileFragment : Fragment() {
+class ProfileFragment : Fragment(R.layout.fragment_profile) {
     private var _binding: FragmentProfileBinding? = null
     private val binding get() = _binding!!
     private val viewModel: LaundryViewModel by activityViewModels()
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        _binding = FragmentProfileBinding.inflate(inflater, container, false)
-        return binding.root
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        _binding = FragmentProfileBinding.bind(view)
 
-        observeViewModel()
         setupClickListeners()
+        observeViewModel()
     }
 
     private fun setupClickListeners() {
@@ -43,10 +37,6 @@ class ProfileFragment : Fragment() {
         }
         binding.btnLogout.setOnClickListener {
             viewModel.logout()
-            // After logout, you might want to switch to the Home fragment
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, HomeFragment())
-                .commit()
         }
     }
 
@@ -55,18 +45,11 @@ class ProfileFragment : Fragment() {
             if (user != null) {
                 binding.tvUserName.text = user.name
                 binding.tvUserEmail.text = user.email
-                binding.tvUserPhone.text = user.phone
-
-                // Find default address and display it
-                val defaultAddress = user.addresses?.find { it.isDefault }?.fullAddress
-                binding.textUserAddress.text = defaultAddress ?: "No default address set."
-
-                binding.btnLogout.visibility = View.VISIBLE
             } else {
-                // This case should ideally not be hit if the fragment is protected,
-                // but as a fallback, redirect to AuthActivity.
-                startActivity(Intent(activity, AuthActivity::class.java))
-                activity?.finish()
+                // This state should rarely be seen now because of the navigation guard,
+                // but it's good practice to handle it.
+                binding.tvUserName.text = "Guest User"
+                binding.tvUserEmail.text = ""
             }
         }
     }

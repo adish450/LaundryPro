@@ -24,6 +24,9 @@ class LaundryViewModel : ViewModel() {
     val cartItems = CartManager.cartItems
     val appliedOffer = CartManager.appliedOffer
 
+    // LiveData to signal navigation events
+    val navigateToHome = MutableLiveData<Boolean>()
+
     init {
         loadServices()
         loadOffers()
@@ -48,14 +51,6 @@ class LaundryViewModel : ViewModel() {
      */
     fun checkUserSession() {
         currentUser.value = SessionManager.getUser()
-    }
-
-    fun onNavigateTo(tabIndex: Int) {
-        navigateToTab.value = tabIndex
-    }
-
-    fun onNavigationComplete() {
-        navigateToTab.value = null
     }
 
     fun login(email: String, password: String) {
@@ -159,9 +154,17 @@ class LaundryViewModel : ViewModel() {
 
     fun logout() {
         SessionManager.clear()
+        CartManager.clearCart()
         currentUser.value = null
         // Reset states
         loginResult.value = LoginResult.Idle
         registerResult.value = RegisterResult.Idle
+        // Trigger the navigation event
+        navigateToHome.value = true
+    }
+
+    // Call this after the navigation is handled to prevent re-triggering
+    fun onHomeNavigationComplete() {
+        navigateToHome.value = false
     }
 }

@@ -63,6 +63,8 @@ dependencies {
 
     implementation(libs.material)
 
+    implementation(libs.play.services.location)
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

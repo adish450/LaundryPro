@@ -1,20 +1,30 @@
 package com.laundrypro.app.fragments
 
+import android.Manifest
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.laundrypro.app.R
 import com.laundrypro.app.adapters.CheckoutItemsAdapter
 import com.laundrypro.app.databinding.FragmentCheckoutBinding
 import com.laundrypro.app.viewmodels.LaundryViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -23,19 +33,31 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
     private var _binding: FragmentCheckoutBinding? = null
     private val binding get() = _binding!!
     private val viewModel: LaundryViewModel by activityViewModels()
+
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var selectedDate: Calendar = Calendar.getInstance()
     private var selectedTime: Calendar = Calendar.getInstance()
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+    private val locationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            getCurrentLocation()
+        } else {
+            Toast.makeText(requireContext(), "Location permission denied.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentCheckoutBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+
         setupToolbar()
         setupClickListeners()
         observeViewModel()
@@ -48,12 +70,16 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
     }
 
     private fun setupClickListeners() {
+        binding.btnUseGps.setOnClickListener {
+            checkPermissionsAndFetchLocation()
+        }
         binding.btnSelectDate.setOnClickListener { showDatePicker() }
         binding.btnSelectTime.setOnClickListener { showTimePicker() }
 
         binding.btnPlaceOrder.setOnClickListener {
-            if (binding.spinnerAddress.selectedItem == null) {
-                Toast.makeText(context, "Please select an address", Toast.LENGTH_SHORT).show()
+            val address = binding.etPickupAddress.text.toString() // Updated to get text from EditText
+            if (address.isBlank() || address == "No default address found.") {
+                Toast.makeText(context, "Please select a pickup address", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             if (binding.textSelectedDate.text.isBlank() || binding.textSelectedTime.text.isBlank()) {
@@ -61,13 +87,11 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
                 return@setOnClickListener
             }
 
-            val address = binding.spinnerAddress.selectedItem.toString()
             val pickupDateTime = "${binding.textSelectedDate.text} at ${binding.textSelectedTime.text}"
 
             viewModel.placeOrder(address, pickupDateTime) { success, message ->
                 if (success) {
                     Toast.makeText(context, "Order placed successfully!", Toast.LENGTH_LONG).show()
-                    // Navigate back to the previous screen (likely the cart or home)
                     parentFragmentManager.popBackStack()
                 } else {
                     Toast.makeText(context, "Failed to place order: $message", Toast.LENGTH_SHORT).show()
@@ -77,6 +101,11 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
     }
 
     private fun observeViewModel() {
+        viewModel.currentUser.observe(viewLifecycleOwner) { user ->
+            val defaultAddress = user?.addresses?.find { it.isDefault }?.fullAddress
+            binding.etPickupAddress.setText(defaultAddress ?: "No default address found.") // Updated to set text in EditText
+        }
+
         viewModel.cartItems.observe(viewLifecycleOwner) { items ->
             if (!items.isNullOrEmpty()) {
                 binding.recyclerOrderItems.adapter = CheckoutItemsAdapter(items)
@@ -88,19 +117,57 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
         viewModel.appliedOffer.observe(viewLifecycleOwner) {
             updatePricing()
         }
+    }
 
-        viewModel.currentUser.observe(viewLifecycleOwner) { user ->
-            user?.addresses?.let { addressesList ->
-                val addresses = addressesList.map { it.fullAddress }
-                val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, addresses)
-                binding.spinnerAddress.adapter = adapter
+    private fun checkPermissionsAndFetchLocation() {
+        when {
+            ContextCompat.checkSelfPermission(
+                requireContext(), Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                getCurrentLocation()
+            }
+            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) -> {
+                Toast.makeText(requireContext(), "Location permission is needed to use GPS.", Toast.LENGTH_LONG).show()
+                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
+            else -> {
+                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
+        }
+    }
+
+    private fun getCurrentLocation() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return
+        }
+        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            if (location != null) {
+                reverseGeocodeLocation(location)
+            } else {
+                Toast.makeText(requireContext(), "Could not retrieve location. Please ensure GPS is enabled.", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun reverseGeocodeLocation(location: android.location.Location) {
+        val geocoder = Geocoder(requireContext(), Locale.getDefault())
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                val addressText = addresses?.firstOrNull()?.getAddressLine(0) ?: "Address not found"
+
+                withContext(Dispatchers.Main) {
+                    binding.etPickupAddress.setText(addressText) // Updated to set text in EditText
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(requireContext(), "Error fetching address.", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
 
     private fun updatePricing() {
-        // This check is crucial to prevent crashes if the view is destroyed
-        // while an observer is still trying to fire.
         if (_binding == null) return
 
         val summary = viewModel.calculateTotal()
@@ -137,6 +204,6 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        _binding = null // Important to prevent memory leaks
+        _binding = null
     }
 }

@@ -5,6 +5,10 @@
     <!-- Add this line right before the <application> tag -->
     <uses-permission android:name="android.permission.INTERNET"/>
 
+    <!-- Permissions for accessing device location -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <application
         android:name=".LaundryProApplication"
         android:allowBackup="true"

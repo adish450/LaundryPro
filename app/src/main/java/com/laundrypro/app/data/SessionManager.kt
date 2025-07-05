@@ -21,8 +21,11 @@ object SessionManager {
         editor.putString(USER_TOKEN, token)
         val userJson = gson.toJson(user)
         editor.putString(USER_DETAILS, userJson)
-        // Use commit() to save data synchronously and avoid race conditions
-        editor.commit()
+        editor.apply()
+    }
+
+    fun getToken(): String? {
+        return prefs.getString(USER_TOKEN, null)
     }
 
     fun getUser(): User? {
@@ -35,7 +38,6 @@ object SessionManager {
     }
 
     fun clear() {
-        // Use commit() for synchronous clearing
-        prefs.edit().clear().commit()
+        prefs.edit().clear().apply()
     }
 }

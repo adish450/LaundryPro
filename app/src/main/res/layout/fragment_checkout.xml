@@ -42,23 +42,68 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Pickup Details"
+                        android:text="Pickup Address"
                         android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
-                    <!-- The TextView is now an editable EditText -->
                     <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/layout_pickup_address"
+                        android:id="@+id/layout_street"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:hint="Pickup Address">
+                        android:hint="Street Address">
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/et_pickup_address"
+                            android:id="@+id/et_street"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            tools:text="123 Main St, Anytown, USA 12345"/>
+                            android:layout_height="wrap_content" />
                     </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/layout_city"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:hint="City">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_city"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="8dp">
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/layout_state"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="4dp"
+                            android:hint="State">
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/et_state"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content" />
+                        </com.google.android.material.textfield.TextInputLayout>
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/layout_zip"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:hint="Zip Code">
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/et_zip"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="number" />
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_use_gps"

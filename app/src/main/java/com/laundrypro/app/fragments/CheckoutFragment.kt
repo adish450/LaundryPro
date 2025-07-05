@@ -21,6 +21,8 @@ import com.google.android.gms.location.LocationServices
 import com.laundrypro.app.R
 import com.laundrypro.app.adapters.CheckoutItemsAdapter
 import com.laundrypro.app.databinding.FragmentCheckoutBinding
+import com.laundrypro.app.models.Address
+import com.laundrypro.app.models.PlaceOrderResult
 import com.laundrypro.app.viewmodels.LaundryViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -77,33 +79,30 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
         binding.btnSelectTime.setOnClickListener { showTimePicker() }
 
         binding.btnPlaceOrder.setOnClickListener {
-            val address = binding.etPickupAddress.text.toString() // Updated to get text from EditText
-            if (address.isBlank() || address == "No default address found.") {
-                Toast.makeText(context, "Please select a pickup address", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            if (binding.textSelectedDate.text.isBlank() || binding.textSelectedTime.text.isBlank()) {
-                Toast.makeText(context, "Please select date and time", Toast.LENGTH_SHORT).show()
+            val street = binding.etStreet.text.toString().trim()
+            val city = binding.etCity.text.toString().trim()
+            val state = binding.etState.text.toString().trim()
+            val zip = binding.etZip.text.toString().trim()
+
+            if (street.isEmpty() || city.isEmpty() || state.isEmpty() || zip.isEmpty()) {
+                Toast.makeText(context, "Please fill all address fields", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            val pickupDateTime = "${binding.textSelectedDate.text} at ${binding.textSelectedTime.text}"
-
-            viewModel.placeOrder(address, pickupDateTime) { success, message ->
-                if (success) {
-                    Toast.makeText(context, "Order placed successfully!", Toast.LENGTH_LONG).show()
-                    parentFragmentManager.popBackStack()
-                } else {
-                    Toast.makeText(context, "Failed to place order: $message", Toast.LENGTH_SHORT).show()
-                }
-            }
+            val pickupAddress = Address(street, city, state, zip)
+            viewModel.placeOrder(pickupAddress)
         }
+
     }
 
     private fun observeViewModel() {
         viewModel.currentUser.observe(viewLifecycleOwner) { user ->
-            val defaultAddress = user?.addresses?.find { it.isDefault }?.fullAddress
-            binding.etPickupAddress.setText(defaultAddress ?: "No default address found.") // Updated to set text in EditText
+            user?.address?.let { address ->
+                binding.etStreet.setText(address.street)
+                binding.etCity.setText(address.city)
+                binding.etState.setText(address.state)
+                binding.etZip.setText(address.zip)
+            }
         }
 
         viewModel.cartItems.observe(viewLifecycleOwner) { items ->
@@ -116,6 +115,28 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
 
         viewModel.appliedOffer.observe(viewLifecycleOwner) {
             updatePricing()
+        }
+
+        viewModel.placeOrderResult.observe(viewLifecycleOwner) { result ->
+            when (result) {
+                is PlaceOrderResult.Loading -> {
+                    // Show loading state
+                    binding.btnPlaceOrder.isEnabled = false
+                    binding.btnPlaceOrder.text = "Placing Order..."
+                }
+                is PlaceOrderResult.Success -> {
+                    // Navigate to the success screen
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, OrderSuccessFragment.newInstance(result.order.id))
+                        .commit()
+                }
+                is PlaceOrderResult.Error -> {
+                    // Hide loading state and show error
+                    binding.btnPlaceOrder.isEnabled = true
+                    binding.btnPlaceOrder.text = "Place Order"
+                    Toast.makeText(context, "Failed to place order: ${result.message}", Toast.LENGTH_LONG).show()
+                }
+            }
         }
     }
 
@@ -154,18 +175,24 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-                val addressText = addresses?.firstOrNull()?.getAddressLine(0) ?: "Address not found"
+                val geocodedAddress = addresses?.firstOrNull()
 
                 withContext(Dispatchers.Main) {
-                    binding.etPickupAddress.setText(addressText) // Updated to set text in EditText
+                    if (geocodedAddress != null) {
+                        binding.etStreet.setText(geocodedAddress.thoroughfare)
+                        binding.etCity.setText(geocodedAddress.locality)
+                        binding.etState.setText(geocodedAddress.adminArea)
+                        binding.etZip.setText(geocodedAddress.postalCode)
+                    } else {
+                        Toast.makeText(requireContext(), "Address not found for this location.", Toast.LENGTH_SHORT).show()
+                    }
                 }
             } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(requireContext(), "Error fetching address.", Toast.LENGTH_SHORT).show()
-                }
+                // ... handle exception
             }
         }
     }
+
 
     private fun updatePricing() {
         if (_binding == null) return

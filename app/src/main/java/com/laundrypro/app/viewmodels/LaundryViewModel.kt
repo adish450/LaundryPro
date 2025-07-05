@@ -1,5 +1,6 @@
 package com.laundrypro.app.viewmodels
 
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -26,6 +27,9 @@ class LaundryViewModel : ViewModel() {
 
     // LiveData to signal navigation events
     val navigateToHome = MutableLiveData<Boolean>()
+
+    private val _placeOrderResult = MutableLiveData<PlaceOrderResult>()
+    val placeOrderResult: LiveData<PlaceOrderResult> = _placeOrderResult
 
     init {
         loadServices()
@@ -86,15 +90,15 @@ class LaundryViewModel : ViewModel() {
         }
     }
 
-    fun addToCart(item: LaundryItem, serviceId: Int) {
+    fun addToCart(item: LaundryItem, serviceId: String) {
         CartManager.addToCart(item, serviceId)
     }
 
-    fun removeFromCart(itemId: String, serviceId: Int) {
+    fun removeFromCart(itemId: String, serviceId: String) {
         CartManager.removeFromCart(itemId, serviceId)
     }
 
-    fun updateCartItemQuantity(itemId: String, serviceId: Int, quantity: Int) {
+    fun updateCartItemQuantity(itemId: String, serviceId: String, quantity: Int) {
         CartManager.updateCartItemQuantity(itemId, serviceId, quantity)
     }
 
@@ -113,31 +117,25 @@ class LaundryViewModel : ViewModel() {
         return CartManager.calculateTotal()
     }
 
-    fun placeOrder(pickupAddress: String, pickupDateTime: String, callback: (Boolean, String?) -> Unit) {
+    fun placeOrder(pickupAddress: Address) {
         viewModelScope.launch {
+            _placeOrderResult.value = PlaceOrderResult.Loading
             try {
-                val orderData = OrderData(
-                    userId = currentUser.value?.id ?: "",
-                    items = cartItems.value ?: mutableListOf(),
-                    pickupAddress = pickupAddress,
-                    pickupDateTime = pickupDateTime,
-                    appliedOffer = appliedOffer.value,
-                    totalAmount = calculateTotal().total
-                )
+                val token = SessionManager.getToken() ?: throw Exception("User not authenticated")
+                val user = currentUser.value ?: throw Exception("User not logged in")
+                val items = cartItems.value ?: emptyList()
+                val total = calculateTotal().total
 
-                // Assuming repository.createOrder is a suspend function
-                val order = repository.createOrder(orderData)
+                val order = repository.placeOrder(token, user, items, total, pickupAddress)
 
-                // This is the fix: Clear the cart after a successful order
                 CartManager.clearCart()
-
-                // loadUserOrders() // You might want to implement this
-                callback(true, order.id)
+                _placeOrderResult.value = PlaceOrderResult.Success(order)
             } catch (e: Exception) {
-                callback(false, e.message)
+                _placeOrderResult.value = PlaceOrderResult.Error(e.message ?: "Unknown error")
             }
         }
     }
+
 
     private fun clearCart() {
         cartItems.value = mutableListOf()
@@ -147,7 +145,7 @@ class LaundryViewModel : ViewModel() {
     private fun loadUserOrders() {
         currentUser.value?.let { user ->
             viewModelScope.launch {
-                orders.value = repository.getUserOrders(user.id)
+                orders.value = user.id?.let { repository.getUserOrders(it) }
             }
         }
     }

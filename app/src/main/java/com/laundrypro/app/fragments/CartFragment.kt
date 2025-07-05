@@ -88,7 +88,8 @@ class CartFragment : Fragment() {
 
     private fun observeViewModel() {
         viewModel.cartItems.observe(viewLifecycleOwner) { cartItems ->
-            cartAdapter.updateCart(cartItems ?: emptyList())
+            // This is the fix: Use submitList() instead of a custom update method
+            cartAdapter.submitList(cartItems ?: emptyList())
             binding.emptyCartLayout.visibility = if (cartItems.isNullOrEmpty()) View.VISIBLE else View.GONE
             binding.cartContentLayout.visibility = if (cartItems.isNullOrEmpty()) View.GONE else View.VISIBLE
             updatePricing()

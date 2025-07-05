@@ -47,7 +47,7 @@ object CartManager {
         }
     }
 
-    fun addToCart(item: LaundryItem, serviceId: Int) {
+    fun addToCart(item: LaundryItem, serviceId: String) {
         val currentList = cartItems.value ?: mutableListOf()
         val existingItem = currentList.find { it.itemId == item.id && it.serviceId == serviceId }
 
@@ -61,14 +61,14 @@ object CartManager {
         saveCart()
     }
 
-    fun removeFromCart(itemId: String, serviceId: Int) {
+    fun removeFromCart(itemId: String, serviceId: String) {
         val currentList = cartItems.value ?: mutableListOf()
         currentList.removeAll { it.itemId == itemId && it.serviceId == serviceId }
         cartItems.postValue(currentList)
         saveCart()
     }
 
-    fun updateCartItemQuantity(itemId: String, serviceId: Int, quantity: Int) {
+    fun updateCartItemQuantity(itemId: String, serviceId: String, quantity: Int) {
         val currentList = cartItems.value ?: mutableListOf()
         if (quantity <= 0) {
             currentList.removeAll { it.itemId == itemId && it.serviceId == serviceId }

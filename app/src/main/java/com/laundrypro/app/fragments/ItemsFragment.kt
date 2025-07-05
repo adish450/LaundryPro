@@ -19,7 +19,7 @@ class ItemsFragment : Fragment() {
 
     private val viewModel: LaundryViewModel by activityViewModels()
     private lateinit var itemsAdapter: ItemsAdapter
-    private var serviceId: Int = 0
+    private var serviceId: String = ""
 
     companion object {
         private const val ARG_SERVICE_ID = "service_id"
@@ -36,7 +36,7 @@ class ItemsFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
-            serviceId = it.getInt(ARG_SERVICE_ID)
+            serviceId = it.getInt(ARG_SERVICE_ID).toString()
         }
     }
 
@@ -71,7 +71,7 @@ class ItemsFragment : Fragment() {
 
     private fun observeViewModel() {
         viewModel.services.observe(viewLifecycleOwner) { services ->
-            val service = services.find { it.id == serviceId }
+            val service = services.find { it.id.toString() == serviceId }
             service?.let {
                 binding.toolbarTitle.text = it.name
                 itemsAdapter.updateItems(it.items)

@@ -47,7 +47,7 @@ class OrdersFragment : Fragment() {
             } else {
                 binding.recyclerOrders.visibility = View.VISIBLE
                 binding.emptyOrdersLayout.visibility = View.GONE
-                ordersAdapter.updateOrders(orders)
+                //ordersAdapter.updateOrders(orders)
             }
         }
     }

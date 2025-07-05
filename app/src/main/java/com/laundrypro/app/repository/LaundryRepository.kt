@@ -3,8 +3,6 @@ package com.laundrypro.app.repository
 import com.laundrypro.app.data.RetrofitInstance
 import com.laundrypro.app.models.*
 import kotlinx.coroutines.delay
-import java.text.SimpleDateFormat
-import java.util.*
 
 class LaundryRepository {
 
@@ -85,24 +83,45 @@ class LaundryRepository {
         }
     }
 
-    suspend fun createOrder(orderData: OrderData): Order {
-        delay(1000)
+    suspend fun placeOrder(
+        token: String,
+        user: User,
+        cartItems: List<CartItem>,
+        totalAmount: Double,
+        pickupAddress: Address
+    ): Order {
+        val serviceId = cartItems.firstOrNull()?.serviceId ?: throw Exception("Cart is empty")
 
-        val orderId = "ORD${System.currentTimeMillis()}"
-        val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+        val clothOrderItems = cartItems.map { cartItem ->
+            ClothOrderItem(
+                id = null.toString(),
+                clothId = cartItem.itemId,
+                quantity = cartItem.quantity,
+                pricePerUnit = cartItem.price,
+                total = cartItem.price * cartItem.quantity
+            )
+        }
 
-        return Order(
-            id = orderId,
-            userId = orderData.userId,
-            items = orderData.items,
-            totalAmount = orderData.totalAmount,
-            pickupAddress = orderData.pickupAddress,
-            pickupDateTime = orderData.pickupDateTime,
-            status = OrderStatus.SCHEDULED,
-            createdAt = currentTime,
-            updatedAt = currentTime
+        val request = PlaceOrderRequest(
+            userId = user.id ?: throw Exception("User ID not found"),
+            serviceId = serviceId,
+            clothes = clothOrderItems,
+            totalAmount = totalAmount,
+            paymentMode = "Online",
+            paymentStatus = "Pending",
+            pickupAddress = pickupAddress,
+            status = "Pending"
         )
+
+        // Pass the formatted token to the API service
+        val response = apiService?.placeOrder("Bearer $token", request)
+        if (response?.isSuccessful == true) {
+            return response.body() ?: throw Exception("Order data not found in response")
+        } else {
+            throw Exception("Failed to place order: ${response?.errorBody()?.string()}")
+        }
     }
+
 
     suspend fun getUserOrders(userId: String): List<Order> {
         delay(500)

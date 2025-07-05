@@ -19,7 +19,9 @@ class LaundryViewModel : ViewModel() {
     val currentUser = MutableLiveData<User?>()
     val services = MutableLiveData<List<LaundryService>>()
     val offers = MutableLiveData<List<Offer>>()
-    val orders = MutableLiveData<List<Order>>()
+
+    private val _orders = MutableLiveData<List<Order>>()
+    val orders: LiveData<List<Order>> = _orders
 
     // Delegate all cart-related LiveData and functions to the singleton CartManager
     val cartItems = CartManager.cartItems
@@ -54,8 +56,16 @@ class LaundryViewModel : ViewModel() {
      * This is public so MainActivity can call it in onResume.
      */
     fun checkUserSession() {
-        currentUser.value = SessionManager.getUser()
+        val savedUser = SessionManager.getUser()
+        if (currentUser.value?.id != savedUser?.id) {
+            currentUser.value = savedUser
+            // If a user is found, load their orders
+            if (savedUser != null) {
+                loadUserOrders()
+            }
+        }
     }
+
 
     fun login(email: String, password: String) {
         viewModelScope.launch {
@@ -64,6 +74,8 @@ class LaundryViewModel : ViewModel() {
                 val response = repository.login(email, password)
                 SessionManager.saveLoginDetails(response.token, response.user)
                 currentUser.value = response.user // Update state
+                // Load orders right after setting the current user
+                loadUserOrders()
                 loginResult.value = LoginResult.Success(response.user)
             } catch (e: Exception) {
                 loginResult.value = LoginResult.Error(e.message ?: "An unknown error occurred")
@@ -142,10 +154,16 @@ class LaundryViewModel : ViewModel() {
         appliedOffer.value = null
     }
 
-    private fun loadUserOrders() {
-        currentUser.value?.let { user ->
-            viewModelScope.launch {
-                orders.value = user.id?.let { repository.getUserOrders(it) }
+    fun loadUserOrders() {
+        val userId = currentUser.value?.id ?: return
+        val token = SessionManager.getToken() ?: return // Don't proceed if there's no token
+
+        viewModelScope.launch {
+            try {
+                val userOrders = repository.getUserOrders(token, userId)
+                _orders.postValue(userOrders)
+            } catch (e: Exception) {
+                // Handle error, maybe post to an error LiveData
             }
         }
     }
@@ -157,6 +175,7 @@ class LaundryViewModel : ViewModel() {
         // Reset states
         loginResult.value = LoginResult.Idle
         registerResult.value = RegisterResult.Idle
+        _orders.value = emptyList() // This is the fix: Clear the orders list
         // Trigger the navigation event
         navigateToHome.value = true
     }

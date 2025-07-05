@@ -123,9 +123,13 @@ class LaundryRepository {
     }
 
 
-    suspend fun getUserOrders(userId: String): List<Order> {
-        delay(500)
-        // Return mock orders for the user
-        return emptyList() // In real app, fetch from database
+    suspend fun getUserOrders(token: String, userId: String): List<Order> {
+        // Pass the formatted token to the API service
+        val response = apiService?.getUserOrders("Bearer $token", userId)
+        if (response?.isSuccessful == true) {
+            return response.body() ?: emptyList()
+        } else {
+            throw Exception("Failed to fetch orders: ${response?.errorBody()?.string()}")
+        }
     }
 }

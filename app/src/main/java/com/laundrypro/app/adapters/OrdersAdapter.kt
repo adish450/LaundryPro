@@ -19,18 +19,16 @@ class OrdersAdapter(private val onOrderClicked: (Order) -> Unit) :
     }
 
     override fun onBindViewHolder(holder: OrderViewHolder, position: Int) {
-        val order = getItem(position)
-        holder.bind(order, onOrderClicked)
+        holder.bind(getItem(position), onOrderClicked)
     }
 
     class OrderViewHolder(private val binding: ItemOrderBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(order: Order, onOrderClicked: (Order) -> Unit) {
-            // Bind data to the views using the correct field names from the Order schema
             binding.textOrderId.text = "Order #${order.id.takeLast(6)}"
             binding.chipOrderStatus.text = order.status
             binding.textOrderTotal.text = String.format("Total: ₹%.2f", order.totalAmount)
+            binding.textServiceName.text = order.serviceId.name // Access the nested service name
 
-            // Safely parse and format the date
             try {
                 val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
                 parser.timeZone = TimeZone.getTimeZone("UTC")
@@ -38,26 +36,21 @@ class OrdersAdapter(private val onOrderClicked: (Order) -> Unit) :
                 val formatter = SimpleDateFormat("MMMM d, yyyy", Locale.US)
                 binding.textOrderDate.text = date?.let { formatter.format(it) } ?: order.createdAt
             } catch (e: Exception) {
-                binding.textOrderDate.text = order.createdAt // Fallback to raw date string
+                binding.textOrderDate.text = order.createdAt
             }
 
-            // Correctly calculate the total number of items from the 'clothes' array
-            val totalItems = order.clothes.sumOf { it.quantity }
-            binding.textOrderSummary.text = "Total Items: $totalItems"
+            // Create a detailed summary of the items in the order
+            val summary = order.clothes.joinToString(separator = "\n") {
+                "${it.quantity} x ${it.clothId}"
+            }
+            binding.textOrderSummary.text = summary
 
-            // Set the click listener for the entire card
             binding.root.setOnClickListener { onOrderClicked(order) }
         }
     }
 
-    // DiffUtil helps RecyclerView efficiently update the list
     class OrderDiffCallback : DiffUtil.ItemCallback<Order>() {
-        override fun areItemsTheSame(oldItem: Order, newItem: Order): Boolean {
-            return oldItem.id == newItem.id
-        }
-
-        override fun areContentsTheSame(oldItem: Order, newItem: Order): Boolean {
-            return oldItem == newItem
-        }
+        override fun areItemsTheSame(oldItem: Order, newItem: Order): Boolean = oldItem.id == newItem.id
+        override fun areContentsTheSame(oldItem: Order, newItem: Order): Boolean = oldItem == newItem
     }
 }

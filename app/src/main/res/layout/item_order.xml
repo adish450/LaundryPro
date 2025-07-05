@@ -16,11 +16,13 @@
 
         <TextView
             android:id="@+id/text_order_id"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/chip_order_status"
+            android:layout_marginEnd="8dp"
             tools:text="Order #64a2c4f..." />
 
         <com.google.android.material.chip.Chip
@@ -32,13 +34,23 @@
             tools:text="Completed" />
 
         <TextView
+            android:id="@+id/text_service_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/text_order_id"
+            tools:text="Dry Cleaning" />
+
+        <TextView
             android:id="@+id/text_order_date"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/text_order_id"
+            app:layout_constraintTop_toBottomOf="@id/text_service_name"
             tools:text="July 1, 2025" />
 
         <TextView
@@ -50,7 +62,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/text_order_date"
-            tools:text="Total Items: 3" />
+            tools:text="1 x Shirt\n5 x Bedsheet" />
 
         <TextView
             android:id="@+id/text_order_total"
@@ -60,7 +72,7 @@
             android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/text_order_summary"
-            tools:text="Total: ₹550.00" />
+            tools:text="Total: ₹395.00" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

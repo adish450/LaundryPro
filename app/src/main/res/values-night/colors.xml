@@ -1,17 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Dark Theme Color Palette -->
+    <!-- Material 3 Dark Theme Colors -->
     <color name="primary_color">#D0BCFF</color>
     <color name="secondary_color">#CCC2DC</color>
     <color name="tertiary_color">#EFB8C8</color>
     <color name="error_color">#F2B8B5</color>
     <color name="background_light">#1C1B1F</color>
 
+    <!-- Legacy Colors (Dark Theme Equivalents) -->
     <color name="purple_500">#BB86FC</color>
     <color name="purple_700">#985EFF</color>
     <color name="teal_200">#03DAC5</color>
-    <color name="teal_700">#018786</color>
+    <color name="teal_700">#03DAC5</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="text_primary">#E6FFFFFF</color> <!-- Lighter text for dark backgrounds -->
+
+    <!-- Text and UI Colors for Dark Theme -->
+    <color name="text_primary">#E6FFFFFF</color>   <!-- 90% White for primary text -->
+    <color name="text_secondary">#99FFFFFF</color> <!-- 60% White for secondary text -->
+    <color name="success_color">#81C784</color>      <!-- A lighter green for success text -->
+    <color name="success_color_light">#2E7D32</color> <!-- A dark green for success backgrounds -->
+    <color name="divider_color">#1FFFFFFF</color>   <!-- 12% White for dividers -->
 </resources>

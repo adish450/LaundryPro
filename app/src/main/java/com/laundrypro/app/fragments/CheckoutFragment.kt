@@ -196,9 +196,9 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
         if (_binding == null) return
 
         val summary = viewModel.calculateTotal()
-        binding.textSubtotal.text = String.format("$%.2f", summary.subtotal)
-        binding.textDiscount.text = String.format("-$%.2f", summary.discount)
-        binding.textTotal.text = String.format("$%.2f", summary.total)
+        binding.textSubtotal.text = String.format("₹%.2f", summary.subtotal)
+        binding.textDiscount.text = String.format("-₹%.2f", summary.discount)
+        binding.textTotal.text = String.format("₹%.2f", summary.total)
         binding.discountRow.visibility = if (summary.discount > 0) View.VISIBLE else View.GONE
     }
 

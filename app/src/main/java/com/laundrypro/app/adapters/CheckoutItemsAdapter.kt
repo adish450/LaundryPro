@@ -23,8 +23,8 @@ class CheckoutItemsAdapter(private val items: List<CartItem>) : RecyclerView.Ada
     class ItemViewHolder(private val binding: ItemCheckoutBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(item: CartItem) {
             // Uses the correct view IDs from the updated layout
-            binding.textItemNameSummary.text = "${item.quantity} x ${item.name}"
-            binding.textItemTotalPrice.text = "$${String.format("%.2f", item.price * item.quantity)}"
+            binding.textItemNameSummary.text = "₹{item.quantity} x ${item.name}"
+            binding.textItemTotalPrice.text = "₹${String.format("%.2f", item.price * item.quantity)}"
         }
     }
 }

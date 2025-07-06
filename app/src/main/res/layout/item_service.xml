@@ -48,7 +48,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:gravity="center"
-            android:text="Starting at $2.50"
+            android:text="Starting at ₹20"
             android:textColor="@color/primary_color"
             android:textSize="14sp"
             android:textStyle="bold" />

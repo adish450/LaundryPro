@@ -190,7 +190,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
-                            tools:text="$20.50" />
+                            tools:text="₹20.50" />
                     </RelativeLayout>
 
                     <RelativeLayout
@@ -209,7 +209,7 @@
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
                             android:textColor="?attr/colorPrimary"
-                            tools:text="-$2.05" />
+                            tools:text="-₹2.05" />
                     </RelativeLayout>
 
                     <RelativeLayout
@@ -228,7 +228,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
-                            tools:text="$18.45" />
+                            tools:text="₹18.45" />
                     </RelativeLayout>
 
                 </LinearLayout>

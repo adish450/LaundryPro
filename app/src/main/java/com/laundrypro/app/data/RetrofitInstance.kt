@@ -1,23 +1,29 @@
 package com.laundrypro.app.data
 
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-class RetrofitInstance {
-    companion object {
-        private var retrofit: Retrofit? = null
-        private val BASE_URL = "https://dhobikart-server.onrender.com/"
+object RetrofitInstance {
+    private const val BASE_URL = "https://dhobikart-server.onrender.com/"
 
-        val service: ApiService?
-            get() {
-                if (retrofit == null) {
-                    retrofit = Retrofit.Builder()
-                        .baseUrl(BASE_URL)
-                        .addConverterFactory(GsonConverterFactory.create())
-                        .build()
-                }
+    private val loggingInterceptor = HttpLoggingInterceptor().apply {
+        level = HttpLoggingInterceptor.Level.BODY
+    }
 
-                return retrofit?.create(ApiService::class.java) // need to pass a service interface which defines and describes the API endpoints and their expected responses format.
-            }
+    // Create an OkHttpClient and add both the logging and auth interceptors
+    private val client = OkHttpClient.Builder()
+        .addInterceptor(loggingInterceptor)
+        .addInterceptor(AuthInterceptor()) // Add the new auth interceptor
+        .build()
+
+    val api: ApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client) // Use the new client
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ApiService::class.java)
     }
 }

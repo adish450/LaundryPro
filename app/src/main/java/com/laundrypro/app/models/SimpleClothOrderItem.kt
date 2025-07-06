@@ -2,11 +2,12 @@ package com.laundrypro.app.models
 
 import com.google.gson.annotations.SerializedName
 
-// Represents an item in the 'clothes' array where clothId is a full Cloth object
-data class PopulatedClothOrderItem(
+
+// A simplified version of the cloth item for this specific response
+data class SimpleClothOrderItem(
     @SerializedName("_id")
     val id: String,
-    val clothId: Cloth, // This is now a full Cloth object
+    val clothId: String, // This is now a String
     val quantity: Int,
     val pricePerUnit: Double,
     val total: Double

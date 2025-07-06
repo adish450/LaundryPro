@@ -1,12 +1,13 @@
 package com.laundrypro.app.repository
 
+import android.util.Log
 import com.laundrypro.app.data.RetrofitInstance
 import com.laundrypro.app.models.*
 import kotlinx.coroutines.delay
 
 class LaundryRepository {
 
-    private val apiService = RetrofitInstance.service
+    private val apiService = RetrofitInstance.api
     // Mock data - In real app, this would come from API/Database
     private val mockServices = listOf(
         LaundryService(
@@ -48,10 +49,31 @@ class LaundryRepository {
         Offer("3", "Weekend Special", "20% off weekend orders", "WEEKEND20", 20.0, "2024-12-31")
     )
 
-    suspend fun getServices(): List<LaundryService> {
+    /*suspend fun getServices(): List<LaundryService> {
         delay(500) // Simulate network delay
         return mockServices
+    }*/
+
+    suspend fun getServices(): List<Service> {
+        val response = apiService.getServices()
+        if (response.isSuccessful) {
+            // This is the fix: Extract the list from the 'data' field of the response body
+            return response.body()?.data ?: emptyList()
+        } else {
+            throw Exception("Failed to fetch services")
+        }
     }
+
+    suspend fun getServiceWithClothes(serviceId: String): List<ServiceCloth> {
+        val response = apiService.getServiceWithClothes(serviceId)
+        if (response.isSuccessful) {
+            // Extract the list of clothes from the wrapper object
+            return response.body()?.clothes ?: emptyList()
+        } else {
+            throw Exception("Failed to fetch clothes for service $serviceId")
+        }
+    }
+
 
     suspend fun getOffers(): List<Offer> {
         delay(300)
@@ -60,36 +82,35 @@ class LaundryRepository {
 
     suspend fun login(email: String, password: String): LoginResponse {
         val request = LoginRequest(email, password)
-        val response = apiService?.login(request)
+        val response = apiService.login(request)
 
-        if (response?.isSuccessful == true) {
+        if (response.isSuccessful) {
             return response.body() ?: throw Exception("Empty response body")
         } else {
-            val errorBody = response?.errorBody()?.string()
-            throw Exception(errorBody ?: "Login failed with status code: ${response?.code()}")
+            val errorBody = response.errorBody()?.string()
+            throw Exception(errorBody ?: "Login failed with status code: ${response.code()}")
 
         }
     }
 
     suspend fun register(name: String, email: String, password: String, phone: String): RegisterResponse {
         val request = RegisterRequest(name, email, password, phone)
-        val response = apiService?.register(request)
+        val response = apiService.register(request)
 
-        if (response?.isSuccessful == true) {
+        if (response.isSuccessful) {
             return response.body() ?: throw Exception("Empty response body")
         } else {
-            val errorBody = response?.errorBody()?.string()
-            throw Exception(errorBody ?: "Registration failed with status code: ${response?.code()}")
+            val errorBody = response.errorBody()?.string()
+            throw Exception(errorBody ?: "Registration failed with status code: ${response.code()}")
         }
     }
 
     suspend fun placeOrder(
-        token: String,
         user: User,
         cartItems: List<CartItem>,
         totalAmount: Double,
         pickupAddress: Address
-    ): Order {
+    ): SimpleOrder {
         val serviceId = cartItems.firstOrNull()?.serviceId ?: throw Exception("Cart is empty")
 
         val clothOrderItems = cartItems.map { cartItem ->
@@ -114,22 +135,23 @@ class LaundryRepository {
         )
 
         // Pass the formatted token to the API service
-        val response = apiService?.placeOrder("Bearer $token", request)
-        if (response?.isSuccessful == true) {
-            return response.body() ?: throw Exception("Order data not found in response")
+        val response = apiService.placeOrder(request)
+        Log.d("LaundryRepository","response.isSuccessful")
+        if (response.isSuccessful) {
+            return response.body()?.order ?: throw Exception("Order data not found in response")
         } else {
-            throw Exception("Failed to place order: ${response?.errorBody()?.string()}")
+            throw Exception("Failed to place order: ${response.errorBody()?.string()}")
         }
     }
 
 
-    suspend fun getUserOrders(token: String, userId: String): List<Order> {
-        // Pass the formatted token to the API service
-        val response = apiService?.getUserOrders("Bearer $token", userId)
-        if (response?.isSuccessful == true) {
-            return response.body() ?: emptyList()
+    suspend fun getUserOrders(userId: String): List<Order> {
+        val response = apiService.getUserOrders(userId)
+        if (response.isSuccessful) {
+            // This is the fix: Extract the list from the 'orders' field of the response body
+            return response.body()?.orders ?: emptyList()
         } else {
-            throw Exception("Failed to fetch orders: ${response?.errorBody()?.string()}")
+            throw Exception("Failed to fetch orders: ${response.errorBody()?.string()}")
         }
     }
 }

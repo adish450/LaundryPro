@@ -4,26 +4,27 @@ import com.laundrypro.app.models.*
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
-import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface ApiService {
-    @POST("/api/auth/login")
+    @POST("api/auth/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 
-    @POST("/api/auth/register")
+    @POST("api/auth/register")
     suspend fun register(@Body request: RegisterRequest): Response<RegisterResponse>
 
-    @POST("/api/order/")
-    suspend fun placeOrder(
-        @Header("Authorization") token: String,
-        @Body request: PlaceOrderRequest
-    ): Response<Order>
+    @GET("api/service/allservices")
+    suspend fun getServices(): Response<ServiceResponse>
 
-    @GET("/api/order/user/{userId}")
-    suspend fun getUserOrders(
-        @Header("Authorization") token: String,
-        @Path("userId") userId: String
-    ): Response<List<Order>>
+    // ADD the new, more efficient endpoint:
+    @GET("api/service/clothes/{serviceId}")
+    suspend fun getServiceWithClothes(@Path("serviceId") serviceId: String
+    ): Response<ServiceWithClothesResponse>
+
+    @POST("api/order/")
+    suspend fun placeOrder(@Body request: PlaceOrderRequest): Response<PlaceOrderResponse>
+
+    @GET("api/order/user/{userId}")
+    suspend fun getUserOrders(@Path("userId") userId: String): Response<UserOrdersResponse>
 }

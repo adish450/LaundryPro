@@ -17,8 +17,10 @@ class LaundryViewModel : ViewModel() {
     val registerResult = MutableLiveData<RegisterResult>(RegisterResult.Idle)
     val navigateToTab = MutableLiveData<Int?>()
     val currentUser = MutableLiveData<User?>()
-    val services = MutableLiveData<List<LaundryService>>()
     val offers = MutableLiveData<List<Offer>>()
+
+    private val _services = MutableLiveData<List<Service>>()
+    val services: LiveData<List<Service>> = _services
 
     private val _orders = MutableLiveData<List<Order>>()
     val orders: LiveData<List<Order>> = _orders
@@ -33,15 +35,32 @@ class LaundryViewModel : ViewModel() {
     private val _placeOrderResult = MutableLiveData<PlaceOrderResult>()
     val placeOrderResult: LiveData<PlaceOrderResult> = _placeOrderResult
 
+    private val _pricedClothItems = MutableLiveData<List<PricedClothItem>>()
+    val pricedClothItems: LiveData<List<PricedClothItem>> = _pricedClothItems
+
+    // This LiveData will now hold the list of clothes with their prices included
+    private val _serviceCloths = MutableLiveData<List<ServiceCloth>>()
+    val serviceCloths: LiveData<List<ServiceCloth>> = _serviceCloths
+
     init {
         loadServices()
         loadOffers()
         checkUserSession()
     }
 
-    private fun loadServices() {
+    /*private fun loadServices() {
         viewModelScope.launch {
             services.value = repository.getServices()
+        }
+    }*/
+
+    fun loadServices() {
+        viewModelScope.launch {
+            try {
+                _services.value = repository.getServices()
+            } catch (e: Exception) {
+                // Handle the error, e.g., show a message to the user
+            }
         }
     }
 
@@ -50,6 +69,19 @@ class LaundryViewModel : ViewModel() {
             offers.value = repository.getOffers()
         }
     }
+
+    fun loadItemsForService(serviceId: String) {
+        viewModelScope.launch {
+            try {
+                // The logic is now much simpler, with only one repository call
+                val items = repository.getServiceWithClothes(serviceId)
+                _serviceCloths.postValue(items)
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
+
 
     /**
      * Checks SharedPreferences for a saved user session and updates currentUser.
@@ -102,8 +134,9 @@ class LaundryViewModel : ViewModel() {
         }
     }
 
-    fun addToCart(item: LaundryItem, serviceId: String) {
-        CartManager.addToCart(item, serviceId)
+    fun addToCart(serviceCloth: ServiceCloth, serviceId: String) {
+        // We now pass the serviceCloth object to the CartManager
+        CartManager.addToCart(serviceCloth, serviceId)
     }
 
     fun removeFromCart(itemId: String, serviceId: String) {
@@ -133,12 +166,11 @@ class LaundryViewModel : ViewModel() {
         viewModelScope.launch {
             _placeOrderResult.value = PlaceOrderResult.Loading
             try {
-                val token = SessionManager.getToken() ?: throw Exception("User not authenticated")
                 val user = currentUser.value ?: throw Exception("User not logged in")
                 val items = cartItems.value ?: emptyList()
                 val total = calculateTotal().total
 
-                val order = repository.placeOrder(token, user, items, total, pickupAddress)
+                val order = repository.placeOrder(user, items, total, pickupAddress)
 
                 CartManager.clearCart()
                 _placeOrderResult.value = PlaceOrderResult.Success(order)
@@ -156,14 +188,13 @@ class LaundryViewModel : ViewModel() {
 
     fun loadUserOrders() {
         val userId = currentUser.value?.id ?: return
-        val token = SessionManager.getToken() ?: return // Don't proceed if there's no token
-
         viewModelScope.launch {
             try {
-                val userOrders = repository.getUserOrders(token, userId)
+                // This call remains the same and will now receive the correct list
+                val userOrders = repository.getUserOrders(userId)
                 _orders.postValue(userOrders)
             } catch (e: Exception) {
-                // Handle error, maybe post to an error LiveData
+                // Handle error
             }
         }
     }

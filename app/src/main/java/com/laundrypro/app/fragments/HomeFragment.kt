@@ -31,6 +31,9 @@ class HomeFragment : Fragment() {
 
         setupRecyclerViews()
         observeViewModel()
+
+        // This is the fix: Fetch services every time the fragment's view is created.
+        viewModel.loadServices()
         binding.cartIconContainer.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, CartFragment())

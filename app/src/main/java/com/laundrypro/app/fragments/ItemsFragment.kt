@@ -16,19 +16,15 @@ import com.laundrypro.app.viewmodels.LaundryViewModel
 class ItemsFragment : Fragment() {
     private var _binding: FragmentItemsBinding? = null
     private val binding get() = _binding!!
-
     private val viewModel: LaundryViewModel by activityViewModels()
     private lateinit var itemsAdapter: ItemsAdapter
     private var serviceId: String = ""
 
     companion object {
         private const val ARG_SERVICE_ID = "service_id"
-
-        fun newInstance(serviceId: Int): ItemsFragment {
+        fun newInstance(serviceId: String): ItemsFragment {
             return ItemsFragment().apply {
-                arguments = Bundle().apply {
-                    putInt(ARG_SERVICE_ID, serviceId)
-                }
+                arguments = Bundle().apply { putString(ARG_SERVICE_ID, serviceId) }
             }
         }
     }
@@ -36,7 +32,7 @@ class ItemsFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
-            serviceId = it.getInt(ARG_SERVICE_ID).toString()
+            serviceId = it.getString(ARG_SERVICE_ID, "")
         }
     }
 
@@ -47,10 +43,11 @@ class ItemsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         setupRecyclerView()
         observeViewModel()
-
+        if (serviceId.isNotEmpty()) {
+            viewModel.loadItemsForService(serviceId)
+        }
         binding.btnViewCart.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, CartFragment())
@@ -60,22 +57,18 @@ class ItemsFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        // This is the fix: The adapter's click listener now calls the ViewModel
-        itemsAdapter = ItemsAdapter { item ->
-            viewModel.addToCart(item, serviceId)
-            Toast.makeText(context, "${item.name} added to cart", Toast.LENGTH_SHORT).show()
+        itemsAdapter = ItemsAdapter { serviceCloth ->
+            viewModel.addToCart(serviceCloth, serviceId)
+            Toast.makeText(context, "${serviceCloth.name} added to cart", Toast.LENGTH_SHORT).show()
         }
         binding.recyclerItems.layoutManager = LinearLayoutManager(context)
         binding.recyclerItems.adapter = itemsAdapter
+
     }
 
     private fun observeViewModel() {
-        viewModel.services.observe(viewLifecycleOwner) { services ->
-            val service = services.find { it.id.toString() == serviceId }
-            service?.let {
-                binding.toolbarTitle.text = it.name
-                itemsAdapter.updateItems(it.items)
-            }
+        viewModel.serviceCloths.observe(viewLifecycleOwner) { items ->
+            itemsAdapter.submitList(items)
         }
 
         viewModel.cartItems.observe(viewLifecycleOwner) { cartItems ->

@@ -32,9 +32,18 @@ class OrderSuccessFragment : Fragment(R.layout.fragment_order_success) {
         val orderId = arguments?.getString(ARG_ORDER_ID) ?: "N/A"
         binding.textOrderIdSummary.text = "Your Order ID is #${orderId.takeLast(6)}"
 
+        binding.btnTrackOrder.setOnClickListener {
+            // Navigate to the "My Orders" screen
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, OrdersFragment())
+                .commit()
+        }
+
         binding.btnBackToHome.setOnClickListener {
-            // Tell the ViewModel to navigate home, which the MainActivity will handle
-            viewModel.onHomeNavigationComplete()
+            // Navigate back to the home screen
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, HomeFragment())
+                .commit()
         }
     }
 

@@ -9,6 +9,7 @@ import com.laundrypro.app.models.CartItem
 import com.laundrypro.app.models.LaundryItem
 import com.laundrypro.app.models.Offer
 import com.laundrypro.app.models.OrderSummary
+import com.laundrypro.app.models.ServiceCloth
 
 object CartManager {
 
@@ -47,14 +48,22 @@ object CartManager {
         }
     }
 
-    fun addToCart(item: LaundryItem, serviceId: String) {
+    fun addToCart(serviceCloth: ServiceCloth, serviceId: String) {
         val currentList = cartItems.value ?: mutableListOf()
-        val existingItem = currentList.find { it.itemId == item.id && it.serviceId == serviceId }
+        val existingItem = currentList.find { it.itemId == serviceCloth.clothId && it.serviceId == serviceId }
 
         if (existingItem != null) {
             existingItem.quantity++
         } else {
-            currentList.add(CartItem(item.id, item.name, item.price, 1, serviceId))
+            currentList.add(
+                CartItem(
+                    itemId = serviceCloth.clothId,
+                    name = serviceCloth.name,
+                    price = serviceCloth.price,
+                    quantity = 1,
+                    serviceId = serviceId
+                )
+            )
         }
 
         cartItems.postValue(currentList)

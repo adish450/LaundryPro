@@ -120,18 +120,16 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
         viewModel.placeOrderResult.observe(viewLifecycleOwner) { result ->
             when (result) {
                 is PlaceOrderResult.Loading -> {
-                    // Show loading state
                     binding.btnPlaceOrder.isEnabled = false
                     binding.btnPlaceOrder.text = "Placing Order..."
                 }
                 is PlaceOrderResult.Success -> {
-                    // Navigate to the success screen
+                    // Navigate to the success screen, passing the new order ID
                     parentFragmentManager.beginTransaction()
                         .replace(R.id.fragment_container, OrderSuccessFragment.newInstance(result.order.id))
                         .commit()
                 }
                 is PlaceOrderResult.Error -> {
-                    // Hide loading state and show error
                     binding.btnPlaceOrder.isEnabled = true
                     binding.btnPlaceOrder.text = "Place Order"
                     Toast.makeText(context, "Failed to place order: ${result.message}", Toast.LENGTH_LONG).show()

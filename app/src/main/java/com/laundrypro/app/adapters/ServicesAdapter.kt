@@ -5,14 +5,15 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.laundrypro.app.databinding.ItemServiceBinding
 import com.laundrypro.app.models.LaundryService
+import com.laundrypro.app.models.Service
 
 class ServicesAdapter(
-    private val onServiceClick: (LaundryService) -> Unit
+    private val onServiceClick: (Service) -> Unit
 ) : RecyclerView.Adapter<ServicesAdapter.ServiceViewHolder>() {
 
-    private var services = listOf<LaundryService>()
+    private var services = listOf<Service>()
 
-    fun updateServices(newServices: List<LaundryService>) {
+    fun updateServices(newServices: List<Service>) {
         services = newServices
         notifyDataSetChanged()
     }
@@ -36,12 +37,12 @@ class ServicesAdapter(
         private val binding: ItemServiceBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(service: LaundryService) {
+        fun bind(service: Service) {
             binding.apply {
                 textServiceName.text = service.name
                 textServiceDescription.text = service.description
-                textServiceIcon.text = service.icon
-                textServicePrice.text = "Starting at $${String.format("%.2f", service.basePrice)}"
+                /*textServiceIcon.text = service.icon
+                textServicePrice.text = "Starting at $${String.format("%.2f", service.basePrice)}"*/
 
                 root.setOnClickListener {
                     onServiceClick(service)

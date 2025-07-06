@@ -30,13 +30,21 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-        tools:text="Your Order ID is #123456" />
+        tools:text="Your Order ID is #8db1a13" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_track_order"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="Track Your Order" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_back_to_home"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="8dp"
         android:text="Continue Shopping" />
 
 </LinearLayout>

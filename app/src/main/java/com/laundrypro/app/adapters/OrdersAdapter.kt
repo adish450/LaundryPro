@@ -41,7 +41,7 @@ class OrdersAdapter(private val onOrderClicked: (Order) -> Unit) :
 
             // Create a detailed summary of the items in the order
             val summary = order.clothes.joinToString(separator = "\n") {
-                "${it.quantity} x ${it.clothId}"
+                "${it.quantity} x ${it.clothId.name}"
             }
             binding.textOrderSummary.text = summary
 

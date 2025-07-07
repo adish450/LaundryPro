@@ -58,8 +58,10 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+
+        // Reset the state every time the view is created to avoid stale success messages
+        viewModel.onOrderPlacementHandled()
 
         setupToolbar()
         setupRecyclerView()
@@ -122,6 +124,9 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
 
         viewModel.placeOrderResult.observe(viewLifecycleOwner) { result ->
             when (result) {
+                is PlaceOrderResult.Idle -> {
+                    binding.btnPlaceOrder.isEnabled = true
+                }
                 is PlaceOrderResult.Loading -> {
                     binding.btnPlaceOrder.isEnabled = false
                     binding.btnPlaceOrder.text = "Placing Order..."

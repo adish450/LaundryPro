@@ -203,6 +203,10 @@ class LaundryViewModel : ViewModel() {
         }
     }
 
+    // NEW: Function to reset the order state after the UI has handled it
+    fun onOrderPlacementHandled() {
+        _placeOrderResult.value = PlaceOrderResult.Idle
+    }
 
     private fun clearCart() {
         cartItems.value = mutableListOf()

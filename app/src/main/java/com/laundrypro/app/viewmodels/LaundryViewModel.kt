@@ -1,6 +1,7 @@
 package com.laundrypro.app.viewmodels
 
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -42,10 +43,32 @@ class LaundryViewModel : ViewModel() {
     private val _serviceCloths = MutableLiveData<List<ServiceCloth>>()
     val serviceCloths: LiveData<List<ServiceCloth>> = _serviceCloths
 
+    // NEW: LiveData to hold the grouped list for the checkout screen
+    val groupedCartItems = MediatorLiveData<List<GroupedCartItems>>()
+
     init {
         loadServices()
         loadOffers()
         checkUserSession()
+        setupGroupedCartObserver()
+    }
+
+    private fun setupGroupedCartObserver() {
+        // This will automatically re-calculate the grouped list whenever the cart or services change
+        groupedCartItems.addSource(cartItems) { updateGroupedCart() }
+        groupedCartItems.addSource(services) { updateGroupedCart() }
+    }
+
+    private fun updateGroupedCart() {
+        val items = cartItems.value ?: return
+        val allServices = services.value ?: return
+
+        val grouped = items.groupBy { it.serviceId }
+            .map { (serviceId, cartItemsForService) ->
+                val serviceName = allServices.find { it.id == serviceId }?.name ?: "Unknown Service"
+                GroupedCartItems(serviceName, cartItemsForService)
+            }
+        groupedCartItems.value = grouped
     }
 
     /*private fun loadServices() {

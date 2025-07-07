@@ -1,236 +1,140 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?android:colorBackground"
+    android:background="?attr/colorSurfaceContainerLowest"
     android:clickable="true"
-    android:focusable="true"
-    android:orientation="vertical">
+    android:focusable="true">
 
-<!--    &lt;!&ndash; Toolbar &ndash;&gt;-->
-<!--    <com.google.android.material.appbar.AppBarLayout-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="wrap_content">-->
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurface">
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="My Cart" />
+    </com.google.android.material.appbar.AppBarLayout>
 
-<!--        <androidx.appcompat.widget.Toolbar-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="?attr/actionBarSize"-->
-<!--            android:background="@color/primary_color">-->
-
-<!--            <TextView-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:layout_gravity="center"-->
-<!--                android:text="Shopping Cart"-->
-<!--                android:textColor="@color/white"-->
-<!--                android:textSize="18sp"-->
-<!--                android:textStyle="bold" />-->
-
-<!--        </androidx.appcompat.widget.Toolbar>-->
-
-<!--    </com.google.android.material.appbar.AppBarLayout>-->
-
-    <!-- Empty Cart Layout -->
-    <LinearLayout
-        android:id="@+id/empty_cart_layout"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:padding="32dp"
-        android:visibility="gone">
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <ImageView
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:src="@drawable/ic_cart_empty"
-            android:tint="@color/text_secondary" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Your cart is empty"
-            android:textColor="@color/text_primary"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Add items to get started"
-            android:textColor="@color/text_secondary"
-            android:textSize="14sp" />
-
-    </LinearLayout>
-
-    <!-- Cart Content Layout -->
-    <LinearLayout
-        android:id="@+id/cart_content_layout"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
-
-        <!-- Cart Items -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_cart"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:padding="16dp"
-            tools:listitem="@layout/item_cart" />
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="250dp"
+            tools:listitem="@layout/item_grouped_cart" />
 
-        <!-- Offer Code Section -->
         <LinearLayout
-            android:layout_width="match_parent"
+            android:id="@+id/empty_cart_layout"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:orientation="horizontal">
+            android:orientation="vertical"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:visibility="gone"
+            tools:visibility="visible">
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:hint="Enter offer code">
+            <ImageView
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:src="@drawable/ic_cart_empty"
+                android:alpha="0.6"
+                app:tint="?attr/colorOnSurfaceVariant"
+                android:contentDescription="Empty Cart Icon"/>
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/et_offer_code"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="textCapCharacters" />
-
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_apply_offer"
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:backgroundTint="@color/primary_color"
-                android:text="Apply"
-                android:textColor="@color/white" />
-
+                android:layout_marginTop="16dp"
+                android:text="Your Cart is Empty"
+                android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"/>
         </LinearLayout>
 
-        <!-- Applied Offer -->
-        <TextView
-            android:id="@+id/applied_offer_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:background="@drawable/bg_offer_applied"
-            android:padding="12dp"
-            android:textColor="@color/success_color"
-            android:textSize="14sp"
-            android:visibility="gone" />
+    </FrameLayout>
 
-        <!-- Order Summary -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cart_content_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.App.Corner.Top"
+        app:cardElevation="8dp">
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/background_light"
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Subtotal -->
+            <!-- Apply Offer Section -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <TextView
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Subtotal"
-                    android:textColor="@color/text_primary"
-                    android:textSize="16sp" />
-
-                <TextView
-                    android:id="@+id/text_subtotal"
+                    android:layout_height="wrap_content"
+                    android:hint="Enter Offer Code">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_offer_code"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"/>
+                </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_apply_offer"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="₹0.00"
-                    android:textColor="@color/text_primary"
-                    android:textSize="16sp" />
-
+                    android:layout_marginStart="8dp"
+                    android:layout_gravity="center_vertical"
+                    android:text="Apply"/>
             </LinearLayout>
 
-            <!-- Discount -->
-            <LinearLayout
+            <!-- Price Summary Section -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <TextView android:text="Subtotal" android:textAppearance="@style/TextAppearance.Material3.BodyLarge" android:layout_alignParentStart="true" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                <TextView android:id="@+id/text_subtotal" tools:text="₹20.50" android:textAppearance="@style/TextAppearance.Material3.BodyLarge" android:layout_alignParentEnd="true" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            </RelativeLayout>
+            <RelativeLayout
                 android:id="@+id/discount_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal"
-                android:visibility="gone">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Discount"
-                    android:textColor="@color/success_color"
-                    android:textSize="16sp" />
-
-                <TextView
-                    android:id="@+id/text_discount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="-₹0.00"
-                    android:textColor="@color/success_color"
-                    android:textSize="16sp" />
-
-            </LinearLayout>
-
-            <!-- Total -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginVertical="12dp"
-                android:background="@color/divider_color" />
-
-            <LinearLayout
+                android:layout_marginTop="4dp">
+                <TextView android:text="Discount" android:textAppearance="@style/TextAppearance.Material3.BodyLarge" android:layout_alignParentStart="true" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                <TextView android:id="@+id/text_discount" tools:text="-₹2.05" android:textColor="?attr/colorPrimary" android:textAppearance="@style/TextAppearance.Material3.BodyLarge" android:layout_alignParentEnd="true" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            </RelativeLayout>
+            <com.google.android.material.divider.MaterialDivider
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"/>
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <TextView android:text="Total" android:textStyle="bold" android:textAppearance="@style/TextAppearance.Material3.TitleMedium" android:layout_alignParentStart="true" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                <TextView android:id="@+id/text_total" tools:text="₹18.45" android:textStyle="bold" android:textAppearance="@style/TextAppearance.Material3.TitleMedium" android:layout_alignParentEnd="true" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            </RelativeLayout>
 
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Total"
-                    android:textColor="@color/text_primary"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/text_total"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="₹0.00"
-                    android:textColor="@color/text_primary"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-            <!-- Checkout Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_checkout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:backgroundTint="@color/primary_color"
-                android:text="Proceed to Checkout"
-                android:textColor="@color/white"
-                android:textSize="16sp" />
-
+                android:padding="12dp"
+                android:text="Proceed to Checkout"/>
         </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
-    </LinearLayout>
-
-</LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

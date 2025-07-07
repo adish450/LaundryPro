@@ -27,4 +27,9 @@ interface ApiService {
 
     @GET("api/order/user/{userId}")
     suspend fun getUserOrders(@Path("userId") userId: String): Response<UserOrdersResponse>
+
+    // NEW: Endpoint for admins to get all orders
+    @GET("api/order/all")
+    suspend fun getAllOrders(): Response<AllOrdersResponse>
+
 }

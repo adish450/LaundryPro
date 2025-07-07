@@ -3,6 +3,7 @@ package com.laundrypro.app.adapters
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.laundrypro.app.databinding.ItemOrderBinding
@@ -39,11 +40,10 @@ class OrdersAdapter(private val onOrderClicked: (Order) -> Unit) :
                 binding.textOrderDate.text = order.createdAt
             }
 
-            // Create a detailed summary of the items in the order
-            val summary = order.clothes.joinToString(separator = "\n") {
-                "${it.quantity} x ${it.clothId.name}"
-            }
-            binding.textOrderSummary.text = summary
+            // Set up the nested RecyclerView for the clothes list
+            val clothesAdapter = OrderClothSummaryAdapter(order.clothes)
+            binding.recyclerOrderClothes.layoutManager = LinearLayoutManager(binding.root.context)
+            binding.recyclerOrderClothes.adapter = clothesAdapter
 
             binding.root.setOnClickListener { onOrderClicked(order) }
         }

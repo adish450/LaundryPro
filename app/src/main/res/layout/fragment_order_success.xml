@@ -7,6 +7,9 @@
     android:gravity="center"
     android:orientation="vertical"
     android:padding="24dp"
+    android:background="?android:colorBackground"
+    android:clickable="true"
+    android:focusable="true"
     tools:context=".fragments.OrderSuccessFragment">
 
     <ImageView

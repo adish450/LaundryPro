@@ -5,6 +5,9 @@
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:fillViewport="true"
+    android:background="?android:colorBackground"
+    android:clickable="true"
+    android:focusable="true"
     tools:context=".fragments.ProfileFragment">
 
     <LinearLayout

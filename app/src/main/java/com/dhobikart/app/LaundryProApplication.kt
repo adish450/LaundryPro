@@ -1,14 +1,16 @@
-package com.dhobikart.app
+package com.laundrypro.app
 
 import android.app.Application
-import com.dhobikart.app.data.CartManager
-import com.dhobikart.app.data.SessionManager
+import com.laundrypro.app.data.AdminSessionManager
+import com.laundrypro.app.data.CartManager
+import com.laundrypro.app.data.SessionManager
 
-class DhobikartApplication : Application() {
+class LaundryProApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         // Initialize the SessionManager once when the app starts
         SessionManager.init(this)
         CartManager.init(this)
+        AdminSessionManager.init(this)
     }
 }

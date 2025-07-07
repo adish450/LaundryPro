@@ -152,4 +152,13 @@ class LaundryRepository {
             throw Exception("Failed to fetch orders: ${response.errorBody()?.string()}")
         }
     }
+
+    suspend fun getAllOrders(token: String): List<AdminOrder> {
+        val response = apiService.getAllOrders()
+        if (response.isSuccessful) {
+            return response.body()?.orders ?: emptyList()
+        } else {
+            throw Exception("Failed to fetch all orders: ${response.errorBody()?.string()}")
+        }
+    }
 }

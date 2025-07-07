@@ -19,7 +19,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.laundrypro.app.R
-import com.laundrypro.app.adapters.CheckoutItemsAdapter
+import com.laundrypro.app.adapters.CheckoutGroupedAdapter
 import com.laundrypro.app.databinding.FragmentCheckoutBinding
 import com.laundrypro.app.models.Address
 import com.laundrypro.app.models.PlaceOrderResult
@@ -37,6 +37,7 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
     private val viewModel: LaundryViewModel by activityViewModels()
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var checkoutAdapter: CheckoutGroupedAdapter
     private var selectedDate: Calendar = Calendar.getInstance()
     private var selectedTime: Calendar = Calendar.getInstance()
 
@@ -61,6 +62,7 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
 
         setupToolbar()
+        setupRecyclerView()
         setupClickListeners()
         observeViewModel()
     }
@@ -69,6 +71,12 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
         binding.toolbar.setNavigationOnClickListener {
             parentFragmentManager.popBackStack()
         }
+    }
+
+    private fun setupRecyclerView() {
+        checkoutAdapter = CheckoutGroupedAdapter()
+        binding.recyclerOrderItems.layoutManager = LinearLayoutManager(context)
+        binding.recyclerOrderItems.adapter = checkoutAdapter
     }
 
     private fun setupClickListeners() {
@@ -88,33 +96,28 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
                 Toast.makeText(context, "Please fill all address fields", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+            if (binding.textSelectedDate.text.isBlank() || binding.textSelectedTime.text.isBlank()) {
+                Toast.makeText(context, "Please select date and time", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
 
             val pickupAddress = Address(street, city, state, zip)
             viewModel.placeOrder(pickupAddress)
         }
-
     }
 
     private fun observeViewModel() {
         viewModel.currentUser.observe(viewLifecycleOwner) { user ->
-            user?.address?.let { address ->
-                binding.etStreet.setText(address.street)
-                binding.etCity.setText(address.city)
-                binding.etState.setText(address.state)
-                binding.etZip.setText(address.zip)
+            user?.address?.let {
+                binding.etStreet.setText(it.street)
+                binding.etCity.setText(it.city)
+                binding.etState.setText(it.state)
+                binding.etZip.setText(it.zip)
             }
         }
 
-        viewModel.cartItems.observe(viewLifecycleOwner) { items ->
-            if (!items.isNullOrEmpty()) {
-                binding.recyclerOrderItems.adapter = CheckoutItemsAdapter(items)
-                binding.recyclerOrderItems.layoutManager = LinearLayoutManager(context)
-            }
-            updatePricing()
-        }
-
-        viewModel.appliedOffer.observe(viewLifecycleOwner) {
-            updatePricing()
+        viewModel.groupedCartItems.observe(viewLifecycleOwner) { groupedItems ->
+            checkoutAdapter.submitList(groupedItems)
         }
 
         viewModel.placeOrderResult.observe(viewLifecycleOwner) { result ->
@@ -124,7 +127,6 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
                     binding.btnPlaceOrder.text = "Placing Order..."
                 }
                 is PlaceOrderResult.Success -> {
-                    // Navigate to the success screen, passing the new order ID
                     parentFragmentManager.beginTransaction()
                         .replace(R.id.fragment_container, OrderSuccessFragment.newInstance(result.order.id))
                         .commit()
@@ -136,6 +138,9 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
                 }
             }
         }
+
+        viewModel.cartItems.observe(viewLifecycleOwner) { updatePricing() }
+        viewModel.appliedOffer.observe(viewLifecycleOwner) { updatePricing() }
     }
 
     private fun checkPermissionsAndFetchLocation() {
@@ -186,11 +191,12 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
                     }
                 }
             } catch (e: Exception) {
-                // ... handle exception
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(requireContext(), "Error fetching address.", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
-
 
     private fun updatePricing() {
         if (_binding == null) return

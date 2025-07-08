@@ -111,22 +111,23 @@ class LaundryRepository {
         totalAmount: Double,
         pickupAddress: Address
     ): SimpleOrder {
-        val serviceId = cartItems.firstOrNull()?.serviceId ?: throw Exception("Cart is empty")
-
-        val clothOrderItems = cartItems.map { cartItem ->
-            ClothOrderItem(
-                id = null.toString(),
-                clothId = cartItem.itemId,
-                quantity = cartItem.quantity,
-                pricePerUnit = cartItem.price,
-                total = cartItem.price * cartItem.quantity
-            )
-        }
+        val serviceOrders = cartItems.groupBy { it.serviceId }
+            .map { (serviceId, items) ->
+                val clothOrderItems = items.map { cartItem ->
+                    ClothOrderItem(
+                        id = cartItem.itemId,
+                        clothId = cartItem.itemId,
+                        quantity = cartItem.quantity,
+                        pricePerUnit = cartItem.price,
+                        total = cartItem.price * cartItem.quantity
+                    )
+                }
+                ServiceOrderItem(serviceId, clothOrderItems)
+            }
 
         val request = PlaceOrderRequest(
             userId = user.id ?: throw Exception("User ID not found"),
-            serviceId = serviceId,
-            clothes = clothOrderItems,
+            services = serviceOrders,
             totalAmount = totalAmount,
             paymentMode = "Online",
             paymentStatus = "Pending",
@@ -134,11 +135,10 @@ class LaundryRepository {
             status = "Pending"
         )
 
-        // Pass the formatted token to the API service
         val response = apiService.placeOrder(request)
-        Log.d("LaundryRepository","response.isSuccessful")
         if (response.isSuccessful) {
-            return response.body()?.order ?: throw Exception("Order data not found in response")
+            // The response body is now the SimpleOrder object itself.
+            return response.body() ?: throw Exception("Order data not found in response")
         } else {
             throw Exception("Failed to place order: ${response.errorBody()?.string()}")
         }
@@ -148,7 +148,6 @@ class LaundryRepository {
     suspend fun getUserOrders(userId: String): List<Order> {
         val response = apiService.getUserOrders(userId)
         if (response.isSuccessful) {
-            // This is the fix: Extract the list from the 'orders' field of the response body
             return response.body()?.orders ?: emptyList()
         } else {
             throw Exception("Failed to fetch orders: ${response.errorBody()?.string()}")

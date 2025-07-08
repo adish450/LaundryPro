@@ -7,8 +7,7 @@ data class Order(
     @SerializedName("_id")
     val id: String,
     val userId: String,
-    val serviceId: Service, // This is now a full Service object
-    val clothes: List<PopulatedClothOrderItem>,
+    val services: List<ServiceOrder>,
     val totalAmount: Double,
     val status: String,
     val paymentMode: String,

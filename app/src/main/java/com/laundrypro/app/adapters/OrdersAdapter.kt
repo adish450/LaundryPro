@@ -16,19 +16,21 @@ class OrdersAdapter(private val onOrderClicked: (Order) -> Unit) :
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): OrderViewHolder {
         val binding = ItemOrderBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return OrderViewHolder(binding)
+        return OrderViewHolder(binding, onOrderClicked)
     }
 
     override fun onBindViewHolder(holder: OrderViewHolder, position: Int) {
-        holder.bind(getItem(position), onOrderClicked)
+        holder.bind(getItem(position))
     }
 
-    class OrderViewHolder(private val binding: ItemOrderBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(order: Order, onOrderClicked: (Order) -> Unit) {
+    class OrderViewHolder(
+        private val binding: ItemOrderBinding,
+        private val onOrderClicked: (Order) -> Unit
+    ) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(order: Order) {
             binding.textOrderId.text = "Order #${order.id.takeLast(6)}"
             binding.chipOrderStatus.text = order.status
             binding.textOrderTotal.text = String.format("Total: ₹%.2f", order.totalAmount)
-            binding.textServiceName.text = order.serviceId.name // Access the nested service name
 
             try {
                 val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
@@ -40,10 +42,11 @@ class OrdersAdapter(private val onOrderClicked: (Order) -> Unit) :
                 binding.textOrderDate.text = order.createdAt
             }
 
-            // Set up the nested RecyclerView for the clothes list
-            val clothesAdapter = OrderClothSummaryAdapter(order.clothes)
-            binding.recyclerOrderClothes.layoutManager = LinearLayoutManager(binding.root.context)
-            binding.recyclerOrderClothes.adapter = clothesAdapter
+            // Set up the nested RecyclerView for the services list.
+            val serviceAdapter = OrderServiceAdapter(order.services)
+            binding.recyclerOrderServices.layoutManager = LinearLayoutManager(binding.root.context)
+            binding.recyclerOrderServices.adapter = serviceAdapter
+
 
             binding.root.setOnClickListener { onOrderClicked(order) }
         }

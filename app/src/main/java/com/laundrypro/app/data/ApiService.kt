@@ -23,7 +23,7 @@ interface ApiService {
     ): Response<ServiceWithClothesResponse>
 
     @POST("api/order/")
-    suspend fun placeOrder(@Body request: PlaceOrderRequest): Response<PlaceOrderResponse>
+    suspend fun placeOrder(@Body request: PlaceOrderRequest): Response<SimpleOrder>
 
     @GET("api/order/user/{userId}")
     suspend fun getUserOrders(@Path("userId") userId: String): Response<UserOrdersResponse>

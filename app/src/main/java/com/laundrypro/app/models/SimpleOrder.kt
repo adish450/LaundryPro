@@ -7,8 +7,7 @@ data class SimpleOrder(
     @SerializedName("_id")
     val id: String,
     val userId: String,
-    val serviceId: String, // This is now a String
-    val clothes: List<SimpleClothOrderItem>, // This uses a simplified item model
+    val services: List<SimpleServiceOrderItem>, // This now matches the new schema
     val totalAmount: Double,
     val status: String,
     val paymentMode: String,

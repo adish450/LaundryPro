@@ -1,4 +1,3 @@
-
 package com.laundrypro.app
 
 import android.os.Bundle
@@ -16,6 +15,7 @@ class AuthActivity : AppCompatActivity() {
     private lateinit var binding: ActivityAuthBinding
     private val viewModel: LaundryViewModel by viewModels()
     private var isLoginMode = true
+    private var isForgotPasswordMode = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,11 +30,23 @@ class AuthActivity : AppCompatActivity() {
     private fun setupClickListeners() {
         binding.textSwitchMode.setOnClickListener {
             isLoginMode = !isLoginMode
+            isForgotPasswordMode = false
+            updateUiForMode()
+        }
+
+        binding.textForgotPassword.setOnClickListener {
+            isForgotPasswordMode = true
             updateUiForMode()
         }
 
         binding.btnAction.setOnClickListener {
-            if (isLoginMode) {
+            if (isForgotPasswordMode) {
+                if (binding.layoutOtp.visibility == View.VISIBLE) {
+                    handleResetPassword()
+                } else {
+                    handleForgotPassword()
+                }
+            } else if (isLoginMode) {
                 handleLogin()
             } else {
                 handleRegister()
@@ -43,22 +55,39 @@ class AuthActivity : AppCompatActivity() {
     }
 
     private fun updateUiForMode() {
-        if (isLoginMode) {
+        if (isForgotPasswordMode) {
+            binding.textTitle.text = "Forgot Password"
+            binding.textSubtitle.text = "Enter your email to reset your password"
+            binding.layoutName.visibility = View.GONE
+            binding.layoutPhone.visibility = View.GONE
+            binding.layoutPassword.visibility = View.GONE
+            binding.layoutConfirmPassword.visibility = View.GONE
+            binding.layoutOtp.visibility = View.GONE
+            binding.btnAction.text = "Send OTP"
+            binding.textSwitchMode.text = "Remembered your password? Login."
+            binding.textForgotPassword.visibility = View.GONE
+        } else if (isLoginMode) {
             binding.textTitle.text = "Welcome Back!"
             binding.textSubtitle.text = "Login to continue"
             binding.layoutName.visibility = View.GONE
             binding.layoutPhone.visibility = View.GONE
+            binding.layoutPassword.visibility = View.VISIBLE
             binding.layoutConfirmPassword.visibility = View.GONE
+            binding.layoutOtp.visibility = View.GONE
             binding.btnAction.text = "Login"
             binding.textSwitchMode.text = "New User? Register here."
+            binding.textForgotPassword.visibility = View.VISIBLE
         } else {
             binding.textTitle.text = "Create an Account"
             binding.textSubtitle.text = "Sign up to get started"
             binding.layoutName.visibility = View.VISIBLE
             binding.layoutPhone.visibility = View.VISIBLE
+            binding.layoutPassword.visibility = View.VISIBLE
             binding.layoutConfirmPassword.visibility = View.VISIBLE
+            binding.layoutOtp.visibility = View.GONE
             binding.btnAction.text = "Register"
             binding.textSwitchMode.text = "Already have an account? Login."
+            binding.textForgotPassword.visibility = View.GONE
         }
     }
 
@@ -89,6 +118,29 @@ class AuthActivity : AppCompatActivity() {
             return
         }
         viewModel.register(name, email, password, phone)
+    }
+
+    private fun handleForgotPassword() {
+        val email = binding.etEmail.text.toString().trim()
+
+        if (email.isEmpty()) {
+            Toast.makeText(this, "Please enter your email", Toast.LENGTH_SHORT).show()
+            return
+        }
+        viewModel.forgotPassword(email)
+    }
+
+    private fun handleResetPassword() {
+        val email = binding.etEmail.text.toString().trim()
+        val otp = binding.etOtp.text.toString().trim()
+        val newPassword = binding.etPassword.text.toString().trim()
+
+        if (email.isEmpty() || otp.isEmpty() || newPassword.isEmpty()) {
+            Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        viewModel.resetPassword(email, otp, newPassword)
     }
 
     private fun observeViewModel() {
@@ -123,6 +175,32 @@ class AuthActivity : AppCompatActivity() {
                     Toast.makeText(this, "Registration Failed: ${result.message}", Toast.LENGTH_LONG).show()
                 }
                 else -> showLoading(false)
+            }
+        }
+
+        viewModel.forgotPasswordOtpSent.observe(this) { otpSent ->
+            if (otpSent) {
+                binding.layoutOtp.visibility = View.VISIBLE
+                binding.layoutPassword.visibility = View.VISIBLE
+                binding.etPassword.hint = "New Password"
+                binding.btnAction.text = "Reset Password"
+                Toast.makeText(this, "OTP sent to your email", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        viewModel.passwordResetSuccessful.observe(this) { resetSuccessful ->
+            if (resetSuccessful) {
+                isForgotPasswordMode = false
+                isLoginMode = true
+                updateUiForMode()
+                Toast.makeText(this, "Password reset successfully", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        viewModel.error.observe(this) { error ->
+            if (error != null) {
+                showLoading(false)
+                Toast.makeText(this, error, Toast.LENGTH_LONG).show()
             }
         }
     }

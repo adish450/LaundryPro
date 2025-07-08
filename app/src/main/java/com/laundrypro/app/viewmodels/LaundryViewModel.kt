@@ -20,6 +20,10 @@ class LaundryViewModel : ViewModel() {
     val currentUser = MutableLiveData<User?>()
     val offers = MutableLiveData<List<Offer>>()
 
+    val forgotPasswordOtpSent = MutableLiveData<Boolean>()
+    val passwordResetSuccessful = MutableLiveData<Boolean>()
+    val error = MutableLiveData<String?>()
+
     private val _services = MutableLiveData<List<Service>>()
     val services: LiveData<List<Service>> = _services
 
@@ -153,6 +157,28 @@ class LaundryViewModel : ViewModel() {
                 loginResult.value = LoginResult.Success(response.user)
             } catch (e: Exception) {
                 registerResult.value = RegisterResult.Error(e.message ?: "An unknown error occurred")
+            }
+        }
+    }
+
+    fun forgotPassword(email: String) {
+        viewModelScope.launch {
+            try {
+                repository.forgotPassword(email)
+                forgotPasswordOtpSent.value = true
+            } catch (e: Exception) {
+                error.value = e.message ?: "An unknown error occurred"
+            }
+        }
+    }
+
+    fun resetPassword(email: String, otp: String, newPassword: String) {
+        viewModelScope.launch {
+            try {
+                repository.resetPassword(email, otp, newPassword)
+                passwordResetSuccessful.value = true
+            } catch (e: Exception) {
+                error.value = e.message ?: "An unknown error occurred"
             }
         }
     }

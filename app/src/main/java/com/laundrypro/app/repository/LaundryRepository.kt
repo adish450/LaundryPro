@@ -105,6 +105,26 @@ class LaundryRepository {
         }
     }
 
+    suspend fun forgotPassword(email: String) {
+        val request = ForgotPasswordRequest(email)
+        val response = apiService.forgotPassword(request)
+
+        if (!response.isSuccessful) {
+            val errorBody = response.errorBody()?.string()
+            throw Exception(errorBody ?: "Forgot password failed with status code: ${response.code()}")
+        }
+    }
+
+    suspend fun resetPassword(email: String, otp: String, newPassword: String) {
+        val request = ResetPasswordRequest(email, otp, newPassword)
+        val response = apiService.resetPassword(request)
+
+        if (!response.isSuccessful) {
+            val errorBody = response.errorBody()?.string()
+            throw Exception(errorBody ?: "Reset password failed with status code: ${response.code()}")
+        }
+    }
+
     suspend fun placeOrder(
         user: User,
         cartItems: List<CartItem>,

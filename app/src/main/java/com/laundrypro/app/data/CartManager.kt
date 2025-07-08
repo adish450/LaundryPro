@@ -6,7 +6,6 @@ import androidx.lifecycle.MutableLiveData
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.laundrypro.app.models.CartItem
-import com.laundrypro.app.models.LaundryItem
 import com.laundrypro.app.models.Offer
 import com.laundrypro.app.models.OrderSummary
 import com.laundrypro.app.models.ServiceCloth
@@ -52,39 +51,50 @@ object CartManager {
         val currentList = cartItems.value ?: mutableListOf()
         val existingItem = currentList.find { it.itemId == serviceCloth.clothId && it.serviceId == serviceId }
 
-        if (existingItem != null) {
-            existingItem.quantity++
+        val newList = if (existingItem != null) {
+            currentList.map { cartItem ->
+                if (cartItem.itemId == existingItem.itemId && cartItem.serviceId == existingItem.serviceId) {
+                    cartItem.copy(quantity = cartItem.quantity + 1)
+                } else {
+                    cartItem
+                }
+            }
         } else {
-            currentList.add(
-                CartItem(
-                    itemId = serviceCloth.clothId,
-                    name = serviceCloth.name,
-                    price = serviceCloth.price,
-                    quantity = 1,
-                    serviceId = serviceId
-                )
+            currentList + CartItem(
+                itemId = serviceCloth.clothId,
+                name = serviceCloth.name,
+                price = serviceCloth.price,
+                quantity = 1,
+                serviceId = serviceId
             )
         }
 
-        cartItems.postValue(currentList)
+        cartItems.postValue(newList.toMutableList())
         saveCart()
     }
 
     fun removeFromCart(itemId: String, serviceId: String) {
-        val currentList = cartItems.value ?: mutableListOf()
-        currentList.removeAll { it.itemId == itemId && it.serviceId == serviceId }
-        cartItems.postValue(currentList)
+        val currentList = cartItems.value ?: return
+        val newList = currentList.filterNot { it.itemId == itemId && it.serviceId == serviceId }
+        cartItems.postValue(newList.toMutableList())
         saveCart()
     }
 
     fun updateCartItemQuantity(itemId: String, serviceId: String, quantity: Int) {
-        val currentList = cartItems.value ?: mutableListOf()
-        if (quantity <= 0) {
-            currentList.removeAll { it.itemId == itemId && it.serviceId == serviceId }
+        val currentList = cartItems.value ?: return
+
+        val newList = if (quantity <= 0) {
+            currentList.filterNot { it.itemId == itemId && it.serviceId == serviceId }
         } else {
-            currentList.find { it.itemId == itemId && it.serviceId == serviceId }?.quantity = quantity
+            currentList.map { cartItem ->
+                if (cartItem.itemId == itemId && cartItem.serviceId == serviceId) {
+                    cartItem.copy(quantity = quantity)
+                } else {
+                    cartItem
+                }
+            }
         }
-        cartItems.postValue(currentList)
+        cartItems.postValue(newList.toMutableList())
         saveCart()
     }
 

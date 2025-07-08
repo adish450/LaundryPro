@@ -10,9 +10,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.SimpleItemAnimator
 import com.laundrypro.app.AuthActivity
 import com.laundrypro.app.R
-import com.laundrypro.app.adapters.CartAdapter
 import com.laundrypro.app.adapters.GroupedCartAdapter
 import com.laundrypro.app.databinding.FragmentCartBinding
 import com.laundrypro.app.viewmodels.LaundryViewModel
@@ -22,7 +22,6 @@ class CartFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: LaundryViewModel by activityViewModels()
-    private lateinit var cartAdapter: CartAdapter
     private lateinit var groupedCartAdapter: GroupedCartAdapter
 
     private val authLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -54,8 +53,12 @@ class CartFragment : Fragment() {
                 viewModel.removeFromCart(itemId, serviceId)
             }
         )
-        binding.recyclerCart.layoutManager = LinearLayoutManager(context)
         binding.recyclerCart.adapter = groupedCartAdapter
+        binding.recyclerCart.layoutManager = LinearLayoutManager(context)
+
+        // **This is the definitive fix:** It disables the default "change" animation
+        // that causes the RecyclerView to jitter when an item's content is updated.
+        (binding.recyclerCart.itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
     }
 
     private fun setupClickListeners() {
@@ -88,19 +91,19 @@ class CartFragment : Fragment() {
     }
 
     private fun observeViewModel() {
-        // The fragment now observes the grouped list
         viewModel.groupedCartItems.observe(viewLifecycleOwner) { groupedItems ->
             groupedCartAdapter.submitList(groupedItems)
 
             val isEmpty = groupedItems.isNullOrEmpty()
             binding.emptyCartLayout.visibility = if (isEmpty) View.VISIBLE else View.GONE
             binding.cartContentLayout.visibility = if (isEmpty) View.GONE else View.VISIBLE
+
+            updatePricing()
         }
 
-        // The observers for pricing and offers remain the same
-        viewModel.appliedOffer.observe(viewLifecycleOwner) { updatePricing() }
-        viewModel.cartItems.observe(viewLifecycleOwner) { updatePricing() }
-
+        viewModel.appliedOffer.observe(viewLifecycleOwner) {
+            updatePricing()
+        }
     }
 
     private fun updatePricing() {

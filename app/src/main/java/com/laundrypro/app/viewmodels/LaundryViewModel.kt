@@ -16,7 +16,6 @@ class LaundryViewModel : ViewModel() {
 
     val loginResult = MutableLiveData<LoginResult>(LoginResult.Idle)
     val registerResult = MutableLiveData<RegisterResult>(RegisterResult.Idle)
-    val navigateToTab = MutableLiveData<Int?>()
     val currentUser = MutableLiveData<User?>()
     val offers = MutableLiveData<List<Offer>>()
 
@@ -35,9 +34,6 @@ class LaundryViewModel : ViewModel() {
 
     private val _placeOrderResult = MutableLiveData<PlaceOrderResult>()
     val placeOrderResult: LiveData<PlaceOrderResult> = _placeOrderResult
-
-    private val _pricedClothItems = MutableLiveData<List<PricedClothItem>>()
-    val pricedClothItems: LiveData<List<PricedClothItem>> = _pricedClothItems
 
     // This LiveData will now hold the list of clothes with their prices included
     private val _serviceCloths = MutableLiveData<List<ServiceCloth>>()

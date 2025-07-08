@@ -14,6 +14,10 @@ class GroupedCartAdapter(
     private val onItemRemoved: (itemId: String, serviceId: String) -> Unit
 ) : ListAdapter<GroupedCartItems, GroupedCartAdapter.GroupViewHolder>(GroupDiffCallback()) {
 
+    init {
+        setHasStableIds(true)
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GroupViewHolder {
         val binding = ItemGroupedCartBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return GroupViewHolder(binding, onQuantityChanged, onItemRemoved)
@@ -23,18 +27,26 @@ class GroupedCartAdapter(
         holder.bind(getItem(position))
     }
 
+    override fun getItemId(position: Int): Long {
+        return getItem(position).serviceName.hashCode().toLong()
+    }
+
     class GroupViewHolder(
         private val binding: ItemGroupedCartBinding,
-        private val onQuantityChanged: (itemId: String, serviceId: String, newQuantity: Int) -> Unit,
-        private val onItemRemoved: (itemId: String, serviceId: String) -> Unit
+        onQuantityChanged: (itemId: String, serviceId: String, newQuantity: Int) -> Unit,
+        onItemRemoved: (itemId: String, serviceId: String) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(groupedItems: GroupedCartItems) {
-            binding.textServiceNameHeader.text = groupedItems.serviceName
 
-            // Setup the nested RecyclerView
-            val itemsAdapter = CartAdapter(onQuantityChanged, onItemRemoved)
+        private val itemsAdapter: CartAdapter
+
+        init {
+            itemsAdapter = CartAdapter(onQuantityChanged, onItemRemoved)
             binding.recyclerNestedItems.layoutManager = LinearLayoutManager(binding.root.context)
             binding.recyclerNestedItems.adapter = itemsAdapter
+        }
+
+        fun bind(groupedItems: GroupedCartItems) {
+            binding.textServiceNameHeader.text = groupedItems.serviceName
             itemsAdapter.submitList(groupedItems.items)
         }
     }

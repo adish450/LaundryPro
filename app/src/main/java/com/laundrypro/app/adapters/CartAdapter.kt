@@ -13,6 +13,10 @@ class CartAdapter(
     private val onItemRemoved: (itemId: String, serviceId: String) -> Unit
 ) : ListAdapter<CartItem, CartAdapter.CartViewHolder>(CartDiffCallback()) {
 
+    init {
+        setHasStableIds(true)
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CartViewHolder {
         val binding = ItemCartBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return CartViewHolder(binding)
@@ -21,6 +25,11 @@ class CartAdapter(
     override fun onBindViewHolder(holder: CartViewHolder, position: Int) {
         val cartItem = getItem(position)
         holder.bind(cartItem, onQuantityChanged, onItemRemoved)
+    }
+
+    override fun getItemId(position: Int): Long {
+        val item = getItem(position)
+        return (item.itemId + item.serviceId).hashCode().toLong()
     }
 
     class CartViewHolder(private val binding: ItemCartBinding) : RecyclerView.ViewHolder(binding.root) {

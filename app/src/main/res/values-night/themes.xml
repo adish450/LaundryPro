@@ -1,13 +1,13 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Theme.LaundryPro" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.DhobiKart" parent="Theme.Material3.DayNight.NoActionBar">
         <!--
         You can customize your theme here by overriding Material attributes.
         For example, to set a static primary color instead of a dynamic one:
         <item name="colorPrimary">@color/primary_color</item>
         -->
     </style>
-    <style name="Theme.LaundryPro.NoActionBar">
+    <style name="Theme.DhobiKart.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
     </style>

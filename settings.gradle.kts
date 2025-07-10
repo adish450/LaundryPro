@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "LaundryPro"
+rootProject.name = "Dhobi Kart"
 include(":app")
  

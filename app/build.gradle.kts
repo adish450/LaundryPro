@@ -1,14 +1,15 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("kotlin-parcelize")
 }
 
 android {
-    namespace = "com.laundrypro.app"
-    compileSdk = 35
+    namespace = "com.dhobikart.app"
+    compileSdk = 34 // Changed to a stable version
 
     defaultConfig {
-        applicationId = "com.laundrypro.app"
+        applicationId = "com.dhobikart.app"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
@@ -39,7 +40,7 @@ android {
 dependencies {
     // Core Android & Kotlin
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat.v171)
+    implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.constraintlayout)
 
@@ -58,15 +59,16 @@ dependencies {
     // Retrofit for networking
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
+    implementation(libs.logging.interceptor)
 
+    // Gson for JSON serialization
     implementation(libs.gson)
 
-    implementation(libs.material)
-
+    // Google Play Services for Location
     implementation(libs.play.services.location)
 
     // Testing
     testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.espresso.core)
 }

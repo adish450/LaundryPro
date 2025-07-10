@@ -1,10 +1,11 @@
-package com.laundrypro.app.fragments
+package com.dhobikart.app.fragments
 
 import android.Manifest
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.pm.PackageManager
 import android.location.Geocoder
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -18,12 +19,12 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import com.laundrypro.app.R
-import com.laundrypro.app.adapters.CheckoutGroupedAdapter
-import com.laundrypro.app.databinding.FragmentCheckoutBinding
-import com.laundrypro.app.models.Address
-import com.laundrypro.app.models.PlaceOrderResult
-import com.laundrypro.app.viewmodels.LaundryViewModel
+import com.dhobikart.app.R
+import com.dhobikart.app.adapters.CheckoutGroupedAdapter
+import com.dhobikart.app.databinding.FragmentCheckoutBinding
+import com.dhobikart.app.models.Address
+import com.dhobikart.app.models.PlaceOrderResult
+import com.dhobikart.app.viewmodels.LaundryViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -67,6 +68,7 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
         setupRecyclerView()
         setupClickListeners()
         observeViewModel()
+        setupAddressSelection()
     }
 
     private fun setupToolbar() {
@@ -110,7 +112,8 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
 
     private fun observeViewModel() {
         viewModel.currentUser.observe(viewLifecycleOwner) { user ->
-            user?.address?.let {
+            // **THE FIX:** Check if the address list is not null and not empty, then use the first address.
+            user?.address?.firstOrNull()?.let {
                 binding.etStreet.setText(it.street)
                 binding.etCity.setText(it.city)
                 binding.etState.setText(it.state)
@@ -146,6 +149,27 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
 
         viewModel.cartItems.observe(viewLifecycleOwner) { updatePricing() }
         viewModel.appliedOffer.observe(viewLifecycleOwner) { updatePricing() }
+    }
+
+    private fun setupAddressSelection() {
+        parentFragmentManager.setFragmentResultListener(
+            SelectAddressDialogFragment.REQUEST_KEY,
+            viewLifecycleOwner
+        ) { _, bundle ->
+            // **THE FIX:** Use the modern, type-safe getParcelable method.
+            val address = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                bundle.getParcelable(SelectAddressDialogFragment.KEY_ADDRESS, Address::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                bundle.getParcelable(SelectAddressDialogFragment.KEY_ADDRESS)
+            }
+            address?.let {
+                binding.etStreet.setText(it.street)
+                binding.etCity.setText(it.city)
+                binding.etState.setText(it.state)
+                binding.etZip.setText(it.zip)
+            }
+        }
     }
 
     private fun checkPermissionsAndFetchLocation() {

@@ -1,14 +1,15 @@
-package com.laundrypro.app.viewmodels
+package com.dhobikart.app.viewmodels
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
-import com.laundrypro.app.data.CartManager
-import com.laundrypro.app.data.SessionManager
-import com.laundrypro.app.models.*
-import com.laundrypro.app.repository.LaundryRepository
+import com.dhobikart.app.data.CartManager
+import com.dhobikart.app.data.SessionManager
+import com.dhobikart.app.models.*
+import com.dhobikart.app.repository.LaundryRepository
 import kotlinx.coroutines.launch
 
 class LaundryViewModel : ViewModel() {
@@ -41,6 +42,13 @@ class LaundryViewModel : ViewModel() {
 
     // NEW: LiveData to hold the grouped list for the checkout screen
     val groupedCartItems = MediatorLiveData<List<GroupedCartItems>>()
+
+    // LiveData to hold the list of unique previous addresses
+    val previousAddresses: LiveData<List<Address>> = _orders.map { orders ->
+        orders.mapNotNull { it.pickupAddress }
+            .distinct()
+    }
+
 
     init {
         loadServices()

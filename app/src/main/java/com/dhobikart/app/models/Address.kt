@@ -1,16 +1,15 @@
-package com.laundrypro.app.models
+package com.dhobikart.app.models
 
+import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
+import kotlinx.parcelize.Parcelize
 
+// **@Parcelize and : Parcelable are essential**
+@Parcelize
 data class Address(
     val street: String?,
     val city: String?,
     val state: String?,
     @SerializedName(value="zip", alternate=["zipCode"])
     val zip: String?
-) {
-    // This helper function creates a readable address string for the UI
-    fun toDisplayString(): String {
-        return "$street, $city, $state - $zip"
-    }
-}
+) : Parcelable

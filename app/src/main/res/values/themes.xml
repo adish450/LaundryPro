@@ -1,23 +1,23 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
     <style name="Theme.DhobiKart" parent="Theme.Material3.DayNight.NoActionBar">
-        <!--
-        You can customize your theme here by overriding Material attributes.
-        For example, to set a static primary color instead of a dynamic one:
-        <item name="colorPrimary">@color/primary_color</item>
-        -->
+        <item name="elevationOverlayEnabled">false</item>
     </style>
+
     <style name="Theme.DhobiKart.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
     </style>
 
-    <!-- NEW: A custom shape style for cards with rounded top corners -->
     <style name="ShapeAppearance.App.Corner.Top" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSizeTopRight">16dp</item>
         <item name="cornerSizeTopLeft">16dp</item>
         <item name="cornerSizeBottomRight">0dp</item>
         <item name="cornerSizeBottomLeft">0dp</item>
+    </style>
+
+    <style name="Theme.DhobiKart.Dialog" parent="ThemeOverlay.Material3.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsFloating">true</item>
     </style>
 </resources>

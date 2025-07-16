@@ -61,7 +61,6 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
         super.onViewCreated(view, savedInstanceState)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
 
-        // Reset the state every time the view is created to avoid stale success messages
         viewModel.onOrderPlacementHandled()
 
         setupToolbar()
@@ -84,6 +83,10 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
     }
 
     private fun setupClickListeners() {
+        binding.btnChooseAddress.setOnClickListener {
+            SelectAddressDialogFragment().show(parentFragmentManager, SelectAddressDialogFragment.TAG)
+        }
+
         binding.btnUseGps.setOnClickListener {
             checkPermissionsAndFetchLocation()
         }
@@ -110,9 +113,28 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
         }
     }
 
+    private fun setupAddressSelection() {
+        parentFragmentManager.setFragmentResultListener(
+            SelectAddressDialogFragment.REQUEST_KEY,
+            viewLifecycleOwner
+        ) { _, bundle ->
+            val address = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                bundle.getParcelable(SelectAddressDialogFragment.KEY_ADDRESS, Address::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                bundle.getParcelable(SelectAddressDialogFragment.KEY_ADDRESS)
+            }
+            address?.let {
+                binding.etStreet.setText(it.street)
+                binding.etCity.setText(it.city)
+                binding.etState.setText(it.state)
+                binding.etZip.setText(it.zip)
+            }
+        }
+    }
+
     private fun observeViewModel() {
         viewModel.currentUser.observe(viewLifecycleOwner) { user ->
-            // **THE FIX:** Check if the address list is not null and not empty, then use the first address.
             user?.address?.firstOrNull()?.let {
                 binding.etStreet.setText(it.street)
                 binding.etCity.setText(it.city)
@@ -149,27 +171,6 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
 
         viewModel.cartItems.observe(viewLifecycleOwner) { updatePricing() }
         viewModel.appliedOffer.observe(viewLifecycleOwner) { updatePricing() }
-    }
-
-    private fun setupAddressSelection() {
-        parentFragmentManager.setFragmentResultListener(
-            SelectAddressDialogFragment.REQUEST_KEY,
-            viewLifecycleOwner
-        ) { _, bundle ->
-            // **THE FIX:** Use the modern, type-safe getParcelable method.
-            val address = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                bundle.getParcelable(SelectAddressDialogFragment.KEY_ADDRESS, Address::class.java)
-            } else {
-                @Suppress("DEPRECATION")
-                bundle.getParcelable(SelectAddressDialogFragment.KEY_ADDRESS)
-            }
-            address?.let {
-                binding.etStreet.setText(it.street)
-                binding.etCity.setText(it.city)
-                binding.etState.setText(it.state)
-                binding.etZip.setText(it.zip)
-            }
-        }
     }
 
     private fun checkPermissionsAndFetchLocation() {

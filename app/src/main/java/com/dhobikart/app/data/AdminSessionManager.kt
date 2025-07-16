@@ -1,27 +1,40 @@
-package com.laundrypro.app.data
+package com.dhobikart.app.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.dhobikart.app.models.User
 import com.google.gson.Gson
-import com.laundrypro.app.models.User
 
 object AdminSessionManager {
-    private const val PREFS_NAME = "LaundryProAdminApp"
+    private const val PREFS_NAME = "DhobiKartAdmin"
     private const val ADMIN_TOKEN = "admin_token"
+    private const val ADMIN_DETAILS = "admin_details"
     private lateinit var prefs: SharedPreferences
+    private val gson = Gson()
 
     fun init(context: Context) {
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
-    fun saveToken(token: String) {
+    fun saveLoginDetails(token: String, user: User) {
         val editor = prefs.edit()
         editor.putString(ADMIN_TOKEN, token)
-        editor.commit()
+        val userJson = gson.toJson(user)
+        editor.putString(ADMIN_DETAILS, userJson)
+        editor.apply()
     }
 
     fun getToken(): String? {
         return prefs.getString(ADMIN_TOKEN, null)
+    }
+
+    fun getUser(): User? {
+        val userJson = prefs.getString(ADMIN_DETAILS, null) ?: return null
+        return try {
+            gson.fromJson(userJson, User::class.java)
+        } catch (e: Exception) {
+            null
+        }
     }
 
     fun clear() {

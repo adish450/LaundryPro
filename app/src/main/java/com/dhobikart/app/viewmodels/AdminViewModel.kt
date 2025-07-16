@@ -1,44 +1,42 @@
-package com.laundrypro.app.viewmodels
+package com.dhobikart.app.viewmodels
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.laundrypro.app.data.AdminSessionManager
-import com.laundrypro.app.models.*
-import com.laundrypro.app.repository.LaundryRepository
+import com.dhobikart.app.data.AdminSessionManager
+import com.dhobikart.app.models.AdminOrder
+import com.dhobikart.app.models.LoginResult
+import com.dhobikart.app.repository.LaundryRepository
 import kotlinx.coroutines.launch
 
 class AdminViewModel : ViewModel() {
-    // This is the fix: Correctly instantiate the repository by passing the ApiService
+
     private val repository = LaundryRepository()
 
     private val _loginResult = MutableLiveData<LoginResult>()
     val loginResult: LiveData<LoginResult> = _loginResult
 
-    private val _allOrders = MutableLiveData<List<AdminOrder>>()
-    val allOrders: LiveData<List<AdminOrder>> = _allOrders
+    private val _orders = MutableLiveData<List<AdminOrder>>()
+    val orders: LiveData<List<AdminOrder>> = _orders
 
-    fun adminLogin(email: String, password: String) {
+    fun login(email: String, password: String) {
         viewModelScope.launch {
-            _loginResult.value = LoginResult.Loading
             try {
-                // This is the fix: Call the login function with the correct LoginRequest object
                 val response = repository.login(email, password)
-                AdminSessionManager.saveToken(response.token)
+                // Assuming admin login uses the same response structure
+                AdminSessionManager.saveLoginDetails(response.token, response.user)
                 _loginResult.value = LoginResult.Success(response.user)
             } catch (e: Exception) {
-                _loginResult.value = LoginResult.Error(e.message ?: "Admin login failed")
+                _loginResult.value = LoginResult.Error(e.message ?: "An unknown error occurred")
             }
         }
     }
 
-    fun fetchAllOrders() {
-        val token = AdminSessionManager.getToken() ?: return
+    fun loadAllOrders() {
         viewModelScope.launch {
             try {
-                val orders = repository.getAllOrders(token)
-                _allOrders.postValue(orders)
+                _orders.value = repository.getAllOrders()
             } catch (e: Exception) {
                 // Handle error
             }

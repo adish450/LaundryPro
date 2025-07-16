@@ -1,6 +1,7 @@
 package com.dhobikart.app.data
 
 import com.dhobikart.app.models.*
+import com.laundrypro.app.models.AllOrdersResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -17,10 +18,8 @@ interface ApiService {
     @GET("api/service/allservices")
     suspend fun getServices(): Response<ServiceResponse>
 
-    // ADD the new, more efficient endpoint:
     @GET("api/service/clothes/{serviceId}")
-    suspend fun getServiceWithClothes(@Path("serviceId") serviceId: String
-    ): Response<ServiceWithClothesResponse>
+    suspend fun getServiceWithClothes(@Path("serviceId") serviceId: String): Response<ServiceWithClothesResponse>
 
     @POST("api/order/")
     suspend fun placeOrder(@Body request: PlaceOrderRequest): Response<SimpleOrder>
@@ -28,8 +27,6 @@ interface ApiService {
     @GET("api/order/user/{userId}")
     suspend fun getUserOrders(@Path("userId") userId: String): Response<UserOrdersResponse>
 
-    // NEW: Endpoint for admins to get all orders
-    @GET("api/order/all")
+    @GET("api/order/getAllOrders")
     suspend fun getAllOrders(): Response<AllOrdersResponse>
-
 }

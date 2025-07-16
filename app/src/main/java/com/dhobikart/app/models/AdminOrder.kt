@@ -1,14 +1,12 @@
-package com.laundrypro.app.models
+package com.dhobikart.app.models
 
 import com.google.gson.annotations.SerializedName
 
-// This model represents an order with the user's details populated
 data class AdminOrder(
     @SerializedName("_id")
     val id: String,
-    val userId: User, // This is now a full User object
-    val serviceId: Service,
-    val clothes: List<PopulatedClothOrderItem>,
+    val userId: User,
+    val services: List<ServiceOrder>,
     val totalAmount: Double,
     val status: String,
     val paymentMode: String,

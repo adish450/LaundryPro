@@ -1,17 +1,18 @@
-package com.laundrypro.app
+package com.dhobikart.app
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.laundrypro.app.fragments.AdminOrdersFragment
+import com.dhobikart.app.fragments.AdminOrdersFragment
 
 class AdminDashboardActivity : AppCompatActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_admin_dashboard) // A simple layout with a FrameLayout container
+        setContentView(R.layout.activity_admin_dashboard)
 
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
-                .replace(R.id.admin_fragment_container, AdminOrdersFragment())
+                .replace(R.id.fragment_container, AdminOrdersFragment())
                 .commit()
         }
     }

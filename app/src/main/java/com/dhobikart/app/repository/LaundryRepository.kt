@@ -2,6 +2,7 @@ package com.dhobikart.app.repository
 
 import com.dhobikart.app.data.RetrofitInstance
 import com.dhobikart.app.models.*
+import com.dhobikart.app.models.Address
 import kotlinx.coroutines.delay
 
 class LaundryRepository {
@@ -153,7 +154,7 @@ class LaundryRepository {
         }
     }
 
-    suspend fun getAllOrders(token: String): List<AdminOrder> {
+    suspend fun getAllOrders(): List<AdminOrder> {
         val response = apiService.getAllOrders()
         if (response.isSuccessful) {
             return response.body()?.orders ?: emptyList()

@@ -34,6 +34,14 @@
             android:name=".AuthActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".AdminAuthActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".AdminDashboardActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

@@ -32,7 +32,10 @@ class HomeFragment : Fragment() {
         setupRecyclerViews()
         observeViewModel()
 
-        // This is the fix: Fetch services every time the fragment's view is created.
+        // Start the shimmer animations
+        binding.shimmerOffers.startShimmer()
+        binding.shimmerServices.startShimmer()
+
         viewModel.loadServices()
         binding.cartIconContainer.setOnClickListener {
             parentFragmentManager.beginTransaction()
@@ -43,16 +46,12 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupRecyclerViews() {
-        // Setup offers RecyclerView
         offersAdapter = OffersAdapter { offer ->
             viewModel.applyOffer(offer.code)
-            // Navigate to cart or show applied message
         }
         binding.recyclerOffers.adapter = offersAdapter
 
-        // Setup services RecyclerView
         servicesAdapter = ServicesAdapter { service ->
-            // Navigate to items fragment
             val fragment = ItemsFragment.newInstance(service.id)
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, fragment)
@@ -65,17 +64,25 @@ class HomeFragment : Fragment() {
 
     private fun observeViewModel() {
         viewModel.offers.observe(viewLifecycleOwner) { offers ->
+            // Stop shimmer and show the recycler view for offers
+            binding.shimmerOffers.stopShimmer()
+            binding.shimmerOffers.visibility = View.GONE
+            binding.recyclerOffers.visibility = View.VISIBLE
             offersAdapter.updateOffers(offers)
         }
 
         viewModel.services.observe(viewLifecycleOwner) { services ->
+            // Stop shimmer and show the recycler view for services
+            binding.shimmerServices.stopShimmer()
+            binding.shimmerServices.visibility = View.GONE
+            binding.recyclerServices.visibility = View.VISIBLE
             servicesAdapter.updateServices(services)
         }
 
         viewModel.cartItems.observe(viewLifecycleOwner) { cartItems ->
             val itemCount = cartItems?.sumOf { it.quantity } ?: 0
             if (itemCount > 0) {
-                itemCount.toString().also { binding.cartBadge.text = it }
+                binding.cartBadge.text = itemCount.toString()
                 binding.cartBadge.visibility = View.VISIBLE
             } else {
                 binding.cartBadge.visibility = View.GONE

@@ -6,6 +6,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 
 interface ApiService {
@@ -29,4 +30,8 @@ interface ApiService {
 
     @GET("api/order/getAllOrders")
     suspend fun getAllOrders(): Response<AllOrdersResponse>
+
+    @POST("api/profile/updateprofile")
+    suspend fun updateUserProfile(@Body request: UpdateProfileRequest): Response<User>
+
 }

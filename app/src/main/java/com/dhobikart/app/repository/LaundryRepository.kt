@@ -162,4 +162,14 @@ class LaundryRepository {
             throw Exception("Failed to fetch all orders: ${response.errorBody()?.string()}")
         }
     }
+
+    suspend fun updateUserProfile(name: String, email: String, phone: String): User {
+        val request = UpdateProfileRequest(name, email, phone)
+        val response = apiService.updateUserProfile(request)
+        if (response.isSuccessful) {
+            return response.body() ?: throw Exception("User data not found in response")
+        } else {
+            throw Exception("Failed to update profile: ${response.errorBody()?.string()}")
+        }
+    }
 }

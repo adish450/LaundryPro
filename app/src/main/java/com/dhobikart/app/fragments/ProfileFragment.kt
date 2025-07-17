@@ -24,7 +24,10 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
     private fun setupClickListeners() {
         binding.btnEditProfile.setOnClickListener {
-            Toast.makeText(context, "Edit Profile Clicked", Toast.LENGTH_SHORT).show()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, EditProfileFragment())
+                .addToBackStack(null)
+                .commit()
         }
         binding.btnManageAddresses.setOnClickListener {
             Toast.makeText(context, "Manage Addresses Clicked", Toast.LENGTH_SHORT).show()

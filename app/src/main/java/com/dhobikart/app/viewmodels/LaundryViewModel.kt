@@ -50,6 +50,8 @@ class LaundryViewModel : ViewModel() {
             .distinct()
     }
 
+    private val _updateProfileResult = MutableLiveData<UpdateProfileResult>(UpdateProfileResult.Idle)
+    val updateProfileResult: LiveData<UpdateProfileResult> = _updateProfileResult
 
     init {
         loadServices()
@@ -206,6 +208,28 @@ class LaundryViewModel : ViewModel() {
                 _placeOrderResult.value = PlaceOrderResult.Error(e.message ?: "Unknown error")
             }
         }
+    }
+
+    fun updateUserProfile(name: String, email: String, phone: String) {
+        viewModelScope.launch {
+            _updateProfileResult.value = UpdateProfileResult.Loading
+            try {
+                val updatedUser = repository.updateUserProfile(name, email, phone)
+                // Update the local user session
+                val currentToken = SessionManager.getToken()
+                if (currentToken != null) {
+                    SessionManager.saveLoginDetails(currentToken, updatedUser)
+                    currentUser.value = updatedUser
+                }
+                _updateProfileResult.value = UpdateProfileResult.Success(updatedUser)
+            } catch (e: Exception) {
+                _updateProfileResult.value = UpdateProfileResult.Error(e.message ?: "An unknown error occurred")
+            }
+        }
+    }
+
+    fun onUpdateProfileHandled() {
+        _updateProfileResult.value = UpdateProfileResult.Idle
     }
 
     // NEW: Function to reset the order state after the UI has handled it

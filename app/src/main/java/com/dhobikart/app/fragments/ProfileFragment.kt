@@ -30,7 +30,10 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 .commit()
         }
         binding.btnManageAddresses.setOnClickListener {
-            Toast.makeText(context, "Manage Addresses Clicked", Toast.LENGTH_SHORT).show()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, ManageAddressesFragment())
+                .addToBackStack(null)
+                .commit()
         }
         binding.btnNotificationSettings.setOnClickListener {
             Toast.makeText(context, "Notification Settings Clicked", Toast.LENGTH_SHORT).show()

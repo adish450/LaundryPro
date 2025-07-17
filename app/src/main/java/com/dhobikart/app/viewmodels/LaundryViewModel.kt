@@ -210,12 +210,21 @@ class LaundryViewModel : ViewModel() {
         }
     }
 
+    fun onOrderPlacementHandled() {
+        _placeOrderResult.value = PlaceOrderResult.Idle
+    }
+
     fun updateUserProfile(name: String, email: String, phone: String) {
+        val user = currentUser.value ?: return
+        val currentAddresses = user.address ?: emptyList()
+        updateUserProfile(name, email, phone, currentAddresses)
+    }
+
+    fun updateUserProfile(name: String, email: String, phone: String, addresses: List<Address>) {
         viewModelScope.launch {
             _updateProfileResult.value = UpdateProfileResult.Loading
             try {
-                val updatedUser = repository.updateUserProfile(name, email, phone)
-                // Update the local user session
+                val updatedUser = repository.updateUserProfile(name, email, phone, addresses)
                 val currentToken = SessionManager.getToken()
                 if (currentToken != null) {
                     SessionManager.saveLoginDetails(currentToken, updatedUser)
@@ -228,13 +237,32 @@ class LaundryViewModel : ViewModel() {
         }
     }
 
-    fun onUpdateProfileHandled() {
-        _updateProfileResult.value = UpdateProfileResult.Idle
+    fun addAddress(newAddress: Address) {
+        val user = currentUser.value ?: return
+        val currentAddresses = user.address?.toMutableList() ?: mutableListOf()
+        currentAddresses.add(newAddress)
+        updateUserProfile(user.name ?: "", user.email ?: "", user.phone ?: "", currentAddresses)
     }
 
-    // NEW: Function to reset the order state after the UI has handled it
-    fun onOrderPlacementHandled() {
-        _placeOrderResult.value = PlaceOrderResult.Idle
+    fun updateAddress(oldAddress: Address, newAddress: Address) {
+        val user = currentUser.value ?: return
+        val currentAddresses = user.address?.toMutableList() ?: mutableListOf()
+        val index = currentAddresses.indexOf(oldAddress)
+        if (index != -1) {
+            currentAddresses[index] = newAddress
+            updateUserProfile(user.name ?: "", user.email ?: "", user.phone ?: "", currentAddresses)
+        }
+    }
+
+    fun deleteAddress(addressToDelete: Address) {
+        val user = currentUser.value ?: return
+        val currentAddresses = user.address?.toMutableList() ?: mutableListOf()
+        currentAddresses.remove(addressToDelete)
+        updateUserProfile(user.name ?: "", user.email ?: "", user.phone ?: "", currentAddresses)
+    }
+
+    fun onUpdateProfileHandled() {
+        _updateProfileResult.value = UpdateProfileResult.Idle
     }
 
     private fun clearCart() {

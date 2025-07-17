@@ -56,7 +56,9 @@ class EditProfileFragment : Fragment() {
             val phone = binding.etPhone.text.toString().trim()
 
             if (name.isNotEmpty() && email.isNotEmpty() && phone.isNotEmpty()) {
-                viewModel.updateUserProfile(name, email, phone)
+                // **THE FIX:** Get the current addresses and pass them to the update function.
+                val currentAddresses = viewModel.currentUser.value?.address ?: emptyList()
+                viewModel.updateUserProfile(name, email, phone, currentAddresses)
             } else {
                 Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
             }

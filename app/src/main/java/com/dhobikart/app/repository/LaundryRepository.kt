@@ -163,8 +163,8 @@ class LaundryRepository {
         }
     }
 
-    suspend fun updateUserProfile(name: String, email: String, phone: String): User {
-        val request = UpdateProfileRequest(name, email, phone)
+    suspend fun updateUserProfile(name: String, email: String, phone: String, addresses: List<Address>): User {
+        val request = UpdateProfileRequest(name, email, phone, addresses)
         val response = apiService.updateUserProfile(request)
         if (response.isSuccessful) {
             return response.body() ?: throw Exception("User data not found in response")

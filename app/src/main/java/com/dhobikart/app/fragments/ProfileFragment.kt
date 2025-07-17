@@ -36,7 +36,10 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 .commit()
         }
         binding.btnNotificationSettings.setOnClickListener {
-            Toast.makeText(context, "Notification Settings Clicked", Toast.LENGTH_SHORT).show()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, NotificationSettingsFragment())
+                .addToBackStack(null)
+                .commit()
         }
         binding.btnHelp.setOnClickListener {
             Toast.makeText(context, "Help & Support Clicked", Toast.LENGTH_SHORT).show()

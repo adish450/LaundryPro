@@ -42,7 +42,10 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 .commit()
         }
         binding.btnHelp.setOnClickListener {
-            Toast.makeText(context, "Help & Support Clicked", Toast.LENGTH_SHORT).show()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, HelpSupportFragment())
+                .addToBackStack(null)
+                .commit()
         }
         binding.btnLogout.setOnClickListener {
             viewModel.logout()

@@ -53,11 +53,7 @@ class ItemsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // **THE FIX:** Set the toolbar title and navigation click listener.
-        binding.toolbar.title = serviceName
-        binding.toolbar.setNavigationOnClickListener {
-            parentFragmentManager.popBackStack()
-        }
+        binding.toolbarTitle.text = serviceName
 
         setupRecyclerView()
         observeViewModel()

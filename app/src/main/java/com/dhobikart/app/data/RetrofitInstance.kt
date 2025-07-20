@@ -1,5 +1,6 @@
 package com.dhobikart.app.data
 
+import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -12,17 +13,22 @@ object RetrofitInstance {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
-    // Create an OkHttpClient and add both the logging and auth interceptors
     private val client = OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
-        .addInterceptor(AuthInterceptor()) // Add the new auth interceptor
+        .addInterceptor(AuthInterceptor())
         .build()
+
+    // **THE FIX:** Create a custom Gson instance with our TypeAdapterFactory.
+    private val gson = GsonBuilder()
+        .registerTypeAdapterFactory(MyTypeAdapterFactory())
+        .create()
 
     val api: ApiService by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .client(client) // Use the new client
-            .addConverterFactory(GsonConverterFactory.create())
+            .client(client)
+            // Use the custom Gson instance.
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
             .create(ApiService::class.java)
     }

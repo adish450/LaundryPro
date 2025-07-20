@@ -1,26 +1,43 @@
 # Add project specific ProGuard rules here.
 # By default, the flags in this file are applied to all build types.
-#
-# You can find general ProGuard rules for popular libraries on ProGuard's website.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# --- General Kotlin Rules ---
+# Keep Kotlin's metadata annotation. This is CRUCIAL for reflection-based libraries.
+-keep,allowobfuscation,allowshrinking class kotlin.Metadata
+-keep,allowobfuscation,allowshrinking interface retrofit2.Call
+-keep,allowobfuscation,allowshrinking class retrofit2.Response
+-keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
 
-# Uncomment this if you want to retain annotations and generics in your code
-#-keepattributes Signature
+# --- Gson Rules (Comprehensive & Definitive) ---
+# Keep all data model classes and their members (fields and methods).
+-keep public class com.dhobikart.app.models.** { *; }
+-keepclassmembers public class com.dhobikart.app.models.** { *; }
 
-# Retain Parcelable constructs
+# Keep attributes needed by Gson for serialization/deserialization.
+-keepattributes Signature, InnerClasses, *Annotation*
+
+# Keep custom TypeAdapter and Factory classes.
+-keep class com.dhobikart.app.data.MyTypeAdapterFactory { *; }
+-keep class com.dhobikart.app.data.LoginResponseTypeAdapter { *; }
+-keep class * extends com.google.gson.TypeAdapter
+
+# --- Retrofit & OkHttp Rules ---
+-dontwarn retrofit2.**
+-keep class retrofit2.** { *; }
+-keep interface retrofit2.** { *; }
+-keepclassmembers interface com.dhobikart.app.data.ApiService { *; }
+
+-dontwarn com.squareup.okhttp3.**
+-keep class com.squareup.okhttp3.** { *; }
+-keep interface com.squareup.okhttp3.** { *; }
+
+-dontwarn okio.**
+-keep class okio.** { *; }
+
+# --- Android Specific Rules ---
 -keep class * implements android.os.Parcelable {
   public static final android.os.Parcelable$Creator *;
 }
-
 -keepclassmembers class **.R$* {
     public static <fields>;
 }

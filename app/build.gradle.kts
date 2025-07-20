@@ -23,7 +23,26 @@ android {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
+        create("alpha") {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            //isDebuggable = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            applicationIdSuffix = ".alpha"
+            signingConfig = signingConfigs.getByName("debug")
+        }
     }
+
+    /*packaging {
+        resources {
+            excludes += "/META-INF/licenses/ASM"
+            excludes += "/META-INF/AL2.0"
+            excludes += "win32-x86-64/attach_hotspot_windows.dll"
+            excludes += "win32-x86/attach_hotspot_windows.dll"
+            excludes += "/META-INF/LGPL2.1"
+        }
+    }*/
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
@@ -52,6 +71,7 @@ dependencies {
 
     // Coroutines for background tasks
     implementation(libs.kotlinx.coroutines.android)
+    //implementation(libs.kotlinx.coroutines.debug)
 
     // RecyclerView for lists
     implementation(libs.androidx.recyclerview)
@@ -66,6 +86,9 @@ dependencies {
 
     // Google Play Services for Location
     implementation(libs.play.services.location)
+
+    // Add the Facebook Shimmer library for loading animations
+    implementation(libs.shimmer)
 
     // Testing
     testImplementation(libs.junit)

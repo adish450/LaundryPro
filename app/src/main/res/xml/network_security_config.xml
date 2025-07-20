@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="false">
+        <!--
+            This is your server's domain. By including it here, you are telling Android
+            that it is a trusted source and your app is allowed to connect to it.
+        -->
+        <domain includeSubdomains="true">dhobikart-server.onrender.com</domain>
+    </domain-config>
+</network-security-config>

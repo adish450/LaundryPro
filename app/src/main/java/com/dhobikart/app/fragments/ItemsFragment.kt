@@ -59,7 +59,6 @@ class ItemsFragment : Fragment() {
     private fun setupRecyclerView() {
         itemsAdapter = ItemsAdapter { serviceCloth ->
             viewModel.addToCart(serviceCloth, serviceId)
-            Toast.makeText(context, "${serviceCloth.name} added to cart", Toast.LENGTH_SHORT).show()
         }
         binding.recyclerItems.layoutManager = LinearLayoutManager(context)
         binding.recyclerItems.adapter = itemsAdapter

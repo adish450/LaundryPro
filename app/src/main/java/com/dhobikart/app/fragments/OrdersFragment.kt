@@ -37,7 +37,7 @@ class OrdersFragment : Fragment(R.layout.fragment_orders) {
 
     private fun setupRecyclerView() {
         ordersAdapter = OrdersAdapter { order ->
-            Toast.makeText(context, "Clicked on order: ${order.id}", Toast.LENGTH_SHORT).show()
+            /*Toast.makeText(context, "Clicked on order: ${order.id}", Toast.LENGTH_SHORT).show()*/
         }
         binding.recyclerOrders.layoutManager = LinearLayoutManager(context)
         binding.recyclerOrders.adapter = ordersAdapter

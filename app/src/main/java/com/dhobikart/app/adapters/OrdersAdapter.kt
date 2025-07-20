@@ -48,7 +48,7 @@ class OrdersAdapter(private val onOrderClicked: (Order) -> Unit) :
             binding.recyclerOrderServices.adapter = serviceAdapter
 
 
-            binding.root.setOnClickListener { onOrderClicked(order) }
+            binding.root.setOnClickListener { /*onOrderClicked(order)*/ }
         }
     }
 

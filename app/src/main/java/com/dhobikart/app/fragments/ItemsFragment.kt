@@ -19,12 +19,19 @@ class ItemsFragment : Fragment() {
     private val viewModel: LaundryViewModel by activityViewModels()
     private lateinit var itemsAdapter: ItemsAdapter
     private var serviceId: String = ""
+    private var serviceName: String = "Service Items" // Default title
 
     companion object {
         private const val ARG_SERVICE_ID = "service_id"
-        fun newInstance(serviceId: String): ItemsFragment {
+        private const val ARG_SERVICE_NAME = "service_name"
+
+        // Updated newInstance to accept the service name
+        fun newInstance(serviceId: String, serviceName: String): ItemsFragment {
             return ItemsFragment().apply {
-                arguments = Bundle().apply { putString(ARG_SERVICE_ID, serviceId) }
+                arguments = Bundle().apply {
+                    putString(ARG_SERVICE_ID, serviceId)
+                    putString(ARG_SERVICE_NAME, serviceName)
+                }
             }
         }
     }
@@ -33,6 +40,8 @@ class ItemsFragment : Fragment() {
         super.onCreate(savedInstanceState)
         arguments?.let {
             serviceId = it.getString(ARG_SERVICE_ID, "")
+            // Retrieve the service name from the arguments
+            serviceName = it.getString(ARG_SERVICE_NAME, "Service Items")
         }
     }
 
@@ -43,6 +52,13 @@ class ItemsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // **THE FIX:** Set the toolbar title and navigation click listener.
+        binding.toolbar.title = serviceName
+        binding.toolbar.setNavigationOnClickListener {
+            parentFragmentManager.popBackStack()
+        }
+
         setupRecyclerView()
         observeViewModel()
         if (serviceId.isNotEmpty()) {
@@ -59,6 +75,7 @@ class ItemsFragment : Fragment() {
     private fun setupRecyclerView() {
         itemsAdapter = ItemsAdapter { serviceCloth ->
             viewModel.addToCart(serviceCloth, serviceId)
+            Toast.makeText(context, "${serviceCloth.name} added to cart", Toast.LENGTH_SHORT).show()
         }
         binding.recyclerItems.layoutManager = LinearLayoutManager(context)
         binding.recyclerItems.adapter = itemsAdapter

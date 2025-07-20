@@ -52,7 +52,8 @@ class HomeFragment : Fragment() {
         binding.recyclerOffers.adapter = offersAdapter
 
         servicesAdapter = ServicesAdapter { service ->
-            val fragment = ItemsFragment.newInstance(service.id)
+            // **THE FIX:** Pass both the service ID and the service name.
+            val fragment = ItemsFragment.newInstance(service.id, service.name)
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, fragment)
                 .addToBackStack(null)

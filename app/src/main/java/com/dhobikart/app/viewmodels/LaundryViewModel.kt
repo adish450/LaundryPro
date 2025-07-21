@@ -1,5 +1,6 @@
 package com.dhobikart.app.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
@@ -14,6 +15,7 @@ import com.dhobikart.app.models.Address
 import kotlinx.coroutines.launch
 
 class LaundryViewModel : ViewModel() {
+    private val TAG = "LaundryViewModel"
     private val repository = LaundryRepository()
 
     val loginResult = MutableLiveData<LoginResult>(LoginResult.Idle)
@@ -87,9 +89,12 @@ class LaundryViewModel : ViewModel() {
     fun loadServices() {
         viewModelScope.launch {
             try {
-                _services.value = repository.getServices()
+                Log.d(TAG, "Fetching services from server...")
+                val servicesResult = repository.getServices()
+                _services.postValue(servicesResult)
+                Log.d(TAG, "Successfully fetched ${servicesResult.size} services.")
             } catch (e: Exception) {
-                // Handle the error, e.g., show a message to the user
+                Log.e(TAG, "Error fetching services: ${e.message}", e)
             }
         }
     }
@@ -104,10 +109,13 @@ class LaundryViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 // The logic is now much simpler, with only one repository call
+                Log.d(TAG, "Fetching itemsForService from server...")
                 val items = repository.getServiceWithClothes(serviceId)
                 _serviceCloths.postValue(items)
+                Log.d(TAG, "Successfully fetched ${items.size} items.")
             } catch (e: Exception) {
                 // Handle error
+                Log.e(TAG, "Error fetching itemsForService: ${e.message}", e)
             }
         }
     }
@@ -133,14 +141,17 @@ class LaundryViewModel : ViewModel() {
         viewModelScope.launch {
             loginResult.value = LoginResult.Loading
             try {
+                Log.d(TAG, "Logging in...")
                 val response = repository.login(email, password)
                 SessionManager.saveLoginDetails(response.token, response.user)
                 currentUser.value = response.user // Update state
                 // Load orders right after setting the current user
                 loadUserOrders()
                 loginResult.value = LoginResult.Success(response.user)
+                Log.d(TAG, "Successfully fetched ${response.user} user.")
             } catch (e: Exception) {
                 loginResult.value = LoginResult.Error(e.message ?: "An unknown error occurred")
+                Log.e(TAG, "Error logging in: ${e.message}", e)
             }
         }
     }
@@ -149,6 +160,7 @@ class LaundryViewModel : ViewModel() {
         viewModelScope.launch {
             registerResult.value = RegisterResult.Loading
             try {
+                Log.d(TAG, "SignUp started...")
                 val response = repository.register(name, email, password, phone)
                 // After successful registration, save user session and auto-login
                 // You might need to adjust your RegisterResponse to include a token
@@ -158,8 +170,10 @@ class LaundryViewModel : ViewModel() {
                 currentUser.value = response.user
                 registerResult.value = RegisterResult.Success(response.user)
                 loginResult.value = LoginResult.Success(response.user)
+                Log.d(TAG, "Successfully signedUp ${response.user} user.")
             } catch (e: Exception) {
                 registerResult.value = RegisterResult.Error(e.message ?: "An unknown error occurred")
+                Log.e(TAG, "Error signing up: ${e.message}", e)
             }
         }
     }
@@ -196,6 +210,7 @@ class LaundryViewModel : ViewModel() {
         viewModelScope.launch {
             _placeOrderResult.value = PlaceOrderResult.Loading
             try {
+                Log.d(TAG, "Placing order...")
                 val user = currentUser.value ?: throw Exception("User not logged in")
                 val items = cartItems.value ?: emptyList()
                 val total = calculateTotal().total
@@ -204,8 +219,10 @@ class LaundryViewModel : ViewModel() {
 
                 CartManager.clearCart()
                 _placeOrderResult.value = PlaceOrderResult.Success(order)
+                Log.d(TAG, "Successfully placed order: ${order.id}")
             } catch (e: Exception) {
                 _placeOrderResult.value = PlaceOrderResult.Error(e.message ?: "Unknown error")
+                Log.e(TAG, "Error placing order: ${e.message}", e)
             }
         }
     }
@@ -214,16 +231,11 @@ class LaundryViewModel : ViewModel() {
         _placeOrderResult.value = PlaceOrderResult.Idle
     }
 
-    fun updateUserProfile(name: String, email: String, phone: String) {
-        val user = currentUser.value ?: return
-        val currentAddresses = user.address ?: emptyList()
-        updateUserProfile(name, email, phone, currentAddresses)
-    }
-
     fun updateUserProfile(name: String, email: String, phone: String, addresses: List<Address>) {
         viewModelScope.launch {
             _updateProfileResult.value = UpdateProfileResult.Loading
             try {
+                Log.d(TAG, "Updating user profile...")
                 val updatedUser = repository.updateUserProfile(name, email, phone, addresses)
                 val currentToken = SessionManager.getToken()
                 if (currentToken != null) {
@@ -231,8 +243,10 @@ class LaundryViewModel : ViewModel() {
                     currentUser.value = updatedUser
                 }
                 _updateProfileResult.value = UpdateProfileResult.Success(updatedUser)
+                Log.d(TAG, "Successfully updated user profile: ${updatedUser.name}")
             } catch (e: Exception) {
                 _updateProfileResult.value = UpdateProfileResult.Error(e.message ?: "An unknown error occurred")
+                Log.e(TAG, "Error updating user profile: ${e.message}", e)
             }
         }
     }
@@ -275,10 +289,13 @@ class LaundryViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 // This call remains the same and will now receive the correct list
+                Log.d(TAG, "Fetching user orders...")
                 val userOrders = repository.getUserOrders(userId)
                 _orders.postValue(userOrders)
+                Log.d(TAG, "Successfully fetched ${userOrders.size} user orders.")
             } catch (e: Exception) {
                 // Handle error
+                Log.e(TAG, "Error fetching user orders: ${e.message}", e)
             }
         }
     }

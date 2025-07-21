@@ -158,7 +158,7 @@ class AuthActivity : AppCompatActivity() {
                 is LoginResult.Loading -> showLoading(true)
                 is LoginResult.Success -> {
                     showLoading(false)
-                    Toast.makeText(this, "Login Successful!", Toast.LENGTH_SHORT).show()
+                    //Toast.makeText(this, "Login Successful!", Toast.LENGTH_SHORT).show()
                     setResult(RESULT_OK)
                     finish()
                 }

@@ -1,5 +1,6 @@
 package com.dhobikart.app.repository
 
+import android.util.Patterns
 import com.dhobikart.app.data.RetrofitInstance
 import com.dhobikart.app.models.*
 import com.dhobikart.app.models.Address
@@ -101,14 +102,48 @@ class LaundryRepository {
     }
 
     suspend fun register(name: String, email: String, password: String, phone: String): RegisterResponse {
-        val request = RegisterRequest(name, email, password, phone)
+        // --- START: Input Validation ---
+
+        // 1. Validate Email Format
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            throw Exception("Please enter a valid email address.")
+        }
+
+        // 2. Validate 10-Digit Indian Phone Number
+        val indianPhoneRegex = Regex("^[6-9]\\d{9}$")
+        if (!phone.matches(indianPhoneRegex)) {
+            throw Exception("Please enter a valid 10-digit Indian mobile number.")
+        }
+
+        // 3. Validate Strong Password
+        // (At least 6 characters, 1 letter, 1 number, 1 special character)
+        val passwordRegex = Regex("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@\$!%*#?&])[A-Za-z\\d@\$!%*#?&]{6,}\$")
+        if (!password.matches(passwordRegex)) {
+            throw Exception("Password must be at least 6 characters long and include a letter, a number, and a special character.")
+        }
+        // --- END: Input Validation ---
+
+        // Prepend country code after validation
+        val formattedPhone = "+91$phone"
+
+        val request = RegisterRequest(name, email, password, formattedPhone)
         val response = apiService.register(request)
 
         if (response.isSuccessful) {
-            return response.body() ?: throw Exception("Empty response body")
+            return response.body() ?: throw Exception("Empty response body for registration")
         } else {
             val errorBody = response.errorBody()?.string()
-            throw Exception(errorBody ?: "Registration failed with status code: ${response.code()}")
+            if (errorBody != null) {
+                val errorResponse = Gson().fromJson(errorBody, ErrorResponse::class.java)
+                // Check for the specific MongoDB duplicate key error.
+                if (errorResponse.error.contains("E11000 duplicate key error")) {
+                    throw Exception("This email is already registered. Please log in or use a different email.")
+                }
+                // If it's another known error, throw its message.
+                throw Exception(errorResponse.error)
+            }
+            // Fallback for unknown errors.
+            throw Exception("Registration failed with status code: ${response.code()}")
         }
     }
 

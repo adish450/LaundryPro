@@ -3,6 +3,7 @@ package com.dhobikart.app.repository
 import com.dhobikart.app.data.RetrofitInstance
 import com.dhobikart.app.models.*
 import com.dhobikart.app.models.Address
+import com.google.gson.Gson
 import kotlinx.coroutines.delay
 
 class LaundryRepository {
@@ -87,9 +88,15 @@ class LaundryRepository {
         if (response.isSuccessful) {
             return response.body() ?: throw Exception("Empty response body")
         } else {
+            // **THE FIX:** Parse the error body to get the clean message.
             val errorBody = response.errorBody()?.string()
-            throw Exception(errorBody ?: "Login failed with status code: ${response.code()}")
-
+            if (errorBody != null) {
+                val errorResponse = Gson().fromJson(errorBody, ErrorResponse::class.java)
+                // Throw an exception with the server's specific error message.
+                throw Exception(errorResponse.error)
+            }
+            // Fallback for other types of errors.
+            throw Exception("Login failed with status code: ${response.code()}")
         }
     }
 

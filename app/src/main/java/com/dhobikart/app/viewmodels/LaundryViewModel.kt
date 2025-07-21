@@ -112,7 +112,7 @@ class LaundryViewModel : ViewModel() {
                 Log.d(TAG, "Fetching itemsForService from server...")
                 val items = repository.getServiceWithClothes(serviceId)
                 _serviceCloths.postValue(items)
-                Log.d(TAG, "Successfully fetched ${items.size} items.")
+                Log.d(TAG, "Successfully fetched ${items.size} services.")
             } catch (e: Exception) {
                 // Handle error
                 Log.e(TAG, "Error fetching itemsForService: ${e.message}", e)

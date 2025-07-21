@@ -126,7 +126,7 @@ class LaundryRepository {
         // Prepend country code after validation
         val formattedPhone = "+91$phone"
 
-        val request = RegisterRequest(name, email, password, formattedPhone)
+        val request = RegisterRequest(name, email, formattedPhone, password)
         val response = apiService.register(request)
 
         if (response.isSuccessful) {

@@ -230,11 +230,31 @@ class LaundryViewModel : ViewModel() {
         }
     }
 
+    /**
+     * This is a new, private function specifically for updating addresses.
+     * It updates the user but does NOT set the _updateProfileResult LiveData.
+     */
+    private fun updateUserAddressesOnly(name: String, email: String, phone: String, addresses: List<Address>) {
+        viewModelScope.launch {
+            try {
+                val updatedUser = repository.updateUserProfile(name, email, phone, addresses)
+                val currentToken = SessionManager.getToken()
+                if (currentToken != null) {
+                    SessionManager.saveLoginDetails(currentToken, updatedUser)
+                    currentUser.value = updatedUser
+                    _addressListUpdated.value = Event(updatedUser)
+                }
+            } catch (e: Exception) {
+                error.value = "Failed to update address: ${e.message}"
+            }
+        }
+    }
+
     fun addAddress(newAddress: Address) {
         val user = currentUser.value ?: return
         val currentAddresses = user.address?.toMutableList() ?: mutableListOf()
         currentAddresses.add(newAddress)
-        updateUserProfile(user.name ?: "", user.email ?: "", user.phone ?: "", currentAddresses.distinct())
+        updateUserAddressesOnly(user.name ?: "", user.email ?: "", user.phone ?: "", currentAddresses.distinct())
     }
 
     fun updateAddress(oldAddress: Address, newAddress: Address) {
@@ -243,7 +263,7 @@ class LaundryViewModel : ViewModel() {
         val index = currentAddresses.indexOf(oldAddress)
         if (index != -1) {
             currentAddresses[index] = newAddress
-            updateUserProfile(user.name ?: "", user.email ?: "", user.phone ?: "", currentAddresses.distinct())
+            updateUserAddressesOnly(user.name ?: "", user.email ?: "", user.phone ?: "", currentAddresses.distinct())
         }
     }
 
@@ -251,7 +271,7 @@ class LaundryViewModel : ViewModel() {
         val user = currentUser.value ?: return
         val currentAddresses = user.address?.toMutableList() ?: mutableListOf()
         currentAddresses.remove(addressToDelete)
-        updateUserProfile(user.name ?: "", user.email ?: "", user.phone ?: "", currentAddresses.distinct())
+        updateUserAddressesOnly(user.name ?: "", user.email ?: "", user.phone ?: "", currentAddresses.distinct())
     }
 
     fun onUpdateProfileHandled() {

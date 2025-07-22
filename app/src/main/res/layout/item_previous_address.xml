@@ -6,7 +6,7 @@
     android:orientation="vertical"
     android:padding="16dp"
     android:foreground="?attr/selectableItemBackground"
-    android:background="?attr/colorSurfaceContainer">
+    android:background="?attr/colorSurfaceContainerHighest">
 
     <TextView
         android:id="@+id/text_street"

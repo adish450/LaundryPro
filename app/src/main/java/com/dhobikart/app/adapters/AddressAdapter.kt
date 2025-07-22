@@ -7,13 +7,14 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.dhobikart.app.databinding.ItemAddressSelectableBinding
 import com.dhobikart.app.models.Address
+import com.google.android.material.card.MaterialCardView
 
 class AddressAdapter : ListAdapter<Address, AddressAdapter.AddressViewHolder>(AddressDiffCallback()) {
 
     private var selectedPosition = -1
 
     fun getSelectedAddress(): Address? {
-        return if (selectedPosition != -1) getItem(selectedPosition) else null
+        return if (selectedPosition != -1 && selectedPosition < itemCount) getItem(selectedPosition) else null
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AddressViewHolder {
@@ -23,10 +24,13 @@ class AddressAdapter : ListAdapter<Address, AddressAdapter.AddressViewHolder>(Ad
 
     override fun onBindViewHolder(holder: AddressViewHolder, position: Int) {
         holder.bind(getItem(position), position, selectedPosition) { newPosition ->
-            val oldPosition = selectedPosition
-            selectedPosition = newPosition
-            notifyItemChanged(oldPosition)
-            notifyItemChanged(newPosition)
+            if (newPosition != selectedPosition) {
+                val oldPosition = selectedPosition
+                selectedPosition = newPosition
+                // Redraw the old and new items to update their selection state
+                notifyItemChanged(oldPosition)
+                notifyItemChanged(newPosition)
+            }
         }
     }
 
@@ -34,6 +38,9 @@ class AddressAdapter : ListAdapter<Address, AddressAdapter.AddressViewHolder>(Ad
         fun bind(address: Address, position: Int, selectedPosition: Int, onAddressClicked: (Int) -> Unit) {
             binding.textStreet.text = address.street
             binding.textCityStateZip.text = "${address.city}, ${address.state}, ${address.zip}"
+
+            // **THE FIX:** Set the checked state on both the card and the radio button.
+            binding.root.isChecked = position == selectedPosition
             binding.radioButton.isChecked = position == selectedPosition
 
             binding.root.setOnClickListener {

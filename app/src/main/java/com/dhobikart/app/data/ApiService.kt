@@ -16,6 +16,14 @@ interface ApiService {
     @POST("api/auth/register")
     suspend fun register(@Body request: RegisterRequest): Response<RegisterResponse>
 
+    // Endpoint to request a password reset OTP
+    @POST("api/auth/requestotp")
+    suspend fun requestOtp(@Body request: ForgotPasswordRequest): Response<Unit>
+
+    // Endpoint to reset the password with an OTP
+    @POST("api/auth/resetpassword")
+    suspend fun resetPassword(@Body request: ResetPasswordRequest): Response<Unit>
+
     @GET("api/service/allservices")
     suspend fun getServices(): Response<ServiceResponse>
 

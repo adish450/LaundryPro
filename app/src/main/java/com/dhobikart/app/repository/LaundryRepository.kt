@@ -10,6 +10,7 @@ import kotlinx.coroutines.delay
 class LaundryRepository {
 
     private val apiService = RetrofitInstance.api
+
     // Mock data - In real app, this would come from API/Database
     private val mockServices = listOf(
         LaundryService(
@@ -46,8 +47,22 @@ class LaundryRepository {
     )
 
     private val mockOffers = listOf(
-        Offer("1", "50% OFF First Order", "New customers get 50% off", "FIRST50", 50.0, "2024-12-31"),
-        Offer("2", "Express Service Free", "Same day delivery at no extra cost", "EXPRESS24", 0.0, "2024-11-30"),
+        Offer(
+            "1",
+            "50% OFF First Order",
+            "New customers get 50% off",
+            "FIRST50",
+            50.0,
+            "2024-12-31"
+        ),
+        Offer(
+            "2",
+            "Express Service Free",
+            "Same day delivery at no extra cost",
+            "EXPRESS24",
+            0.0,
+            "2024-11-30"
+        ),
         Offer("3", "Weekend Special", "20% off weekend orders", "WEEKEND20", 20.0, "2024-12-31")
     )
 
@@ -101,7 +116,12 @@ class LaundryRepository {
         }
     }
 
-    suspend fun register(name: String, email: String, password: String, phone: String): RegisterResponse {
+    suspend fun register(
+        name: String,
+        email: String,
+        password: String,
+        phone: String
+    ): RegisterResponse {
         // --- START: Input Validation ---
 
         // 1. Validate Email Format
@@ -117,7 +137,8 @@ class LaundryRepository {
 
         // 3. Validate Strong Password
         // (At least 6 characters, 1 letter, 1 number, 1 special character)
-        val passwordRegex = Regex("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@\$!%*#?&])[A-Za-z\\d@\$!%*#?&]{6,}\$")
+        val passwordRegex =
+            Regex("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@\$!%*#?&])[A-Za-z\\d@\$!%*#?&]{6,}\$")
         if (!password.matches(passwordRegex)) {
             throw Exception("Password must be at least 6 characters long and include a letter, a number, and a special character.")
         }
@@ -144,6 +165,39 @@ class LaundryRepository {
             }
             // Fallback for unknown errors.
             throw Exception("Registration failed with status code: ${response.code()}")
+        }
+    }
+
+    /**
+     * Sends a request to the server to email a password reset OTP to the user.
+     */
+    suspend fun requestOtp(email: String) {
+        val request = ForgotPasswordRequest(email)
+        val response = apiService.requestOtp(request)
+        if (!response.isSuccessful) {
+            val errorBody = response.errorBody()?.string()
+            if (errorBody != null) {
+                // **THE FIX:** Parse the error body to get the clean message.
+                val errorResponse = Gson().fromJson(errorBody, ErrorResponse::class.java)
+                throw Exception(errorResponse.error)
+            }
+            throw Exception("Failed to request OTP with status code: ${response.code()}")
+        }
+    }
+
+    /**
+     * Sends a request to the server to reset the user's password using the provided OTP.
+     */
+    suspend fun resetPassword(email: String, otp: String, newPassword: String) {
+        val request = ResetPasswordRequest(email, otp, newPassword)
+        val response = apiService.resetPassword(request)
+        if (!response.isSuccessful) {
+            val errorBody = response.errorBody()?.string()
+            if (errorBody != null) {
+                val errorResponse = Gson().fromJson(errorBody, ErrorResponse::class.java)
+                throw Exception(errorResponse.error)
+            }
+            throw Exception("Failed to reset password with status code: ${response.code()}")
         }
     }
 
@@ -205,7 +259,12 @@ class LaundryRepository {
         }
     }
 
-    suspend fun updateUserProfile(name: String, email: String, phone: String, addresses: List<Address>): User {
+    suspend fun updateUserProfile(
+        name: String,
+        email: String,
+        phone: String,
+        addresses: List<Address>
+    ): User {
         val request = UpdateProfileRequest(name, email, phone, addresses)
         val response = apiService.updateUserProfile(request)
         if (response.isSuccessful) {

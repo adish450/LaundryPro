@@ -141,13 +141,13 @@ class LaundryViewModel : ViewModel() {
         }
     }
 
-    /*fun forgotPassword(email: String) {
+    fun requestOtp(email: String) {
         viewModelScope.launch {
             try {
-                repository.forgotPassword(email)
-                forgotPasswordOtpSent.value = true
+                repository.requestOtp(email)
+                forgotPasswordOtpSent.postValue(true)
             } catch (e: Exception) {
-                error.value = e.message ?: "An unknown error occurred"
+                error.postValue(e.message)
             }
         }
     }
@@ -156,12 +156,12 @@ class LaundryViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 repository.resetPassword(email, otp, newPassword)
-                passwordResetSuccessful.value = true
+                passwordResetSuccessful.postValue(true)
             } catch (e: Exception) {
-                error.value = e.message ?: "An unknown error occurred"
+                error.postValue(e.message)
             }
         }
-    }*/
+    }
 
     fun addToCart(serviceCloth: ServiceCloth, serviceId: String) {
         CartManager.addToCart(serviceCloth, serviceId)

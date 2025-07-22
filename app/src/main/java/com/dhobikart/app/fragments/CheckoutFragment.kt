@@ -5,7 +5,6 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.pm.PackageManager
 import android.location.Geocoder
-import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -17,14 +16,15 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
 import com.dhobikart.app.R
 import com.dhobikart.app.adapters.CheckoutGroupedAdapter
+import com.dhobikart.app.adapters.SelectableAddressAdapter
 import com.dhobikart.app.databinding.FragmentCheckoutBinding
 import com.dhobikart.app.models.Address
 import com.dhobikart.app.models.PlaceOrderResult
 import com.dhobikart.app.viewmodels.LaundryViewModel
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -37,8 +37,10 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
     private val binding get() = _binding!!
     private val viewModel: LaundryViewModel by activityViewModels()
 
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var checkoutAdapter: CheckoutGroupedAdapter
+    private lateinit var addressAdapter: SelectableAddressAdapter
+    private var selectedPickupAddress: Address? = null
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var selectedDate: Calendar = Calendar.getInstance()
     private var selectedTime: Calendar = Calendar.getInstance()
 
@@ -60,14 +62,12 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
-
         viewModel.onOrderPlacementHandled()
 
         setupToolbar()
-        setupRecyclerView()
+        setupRecyclerViews()
         setupClickListeners()
         observeViewModel()
-        setupAddressSelection()
     }
 
     private fun setupToolbar() {
@@ -76,70 +76,73 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
         }
     }
 
-    private fun setupRecyclerView() {
+    private fun setupRecyclerViews() {
         checkoutAdapter = CheckoutGroupedAdapter()
         binding.recyclerOrderItems.layoutManager = LinearLayoutManager(context)
         binding.recyclerOrderItems.adapter = checkoutAdapter
+
+        addressAdapter = SelectableAddressAdapter { address ->
+            selectedPickupAddress = address
+        }
+        binding.recyclerSavedAddresses.layoutManager = LinearLayoutManager(context)
+        binding.recyclerSavedAddresses.adapter = addressAdapter
     }
 
     private fun setupClickListeners() {
-        binding.btnChooseAddress.setOnClickListener {
-            SelectAddressDialogFragment().show(parentFragmentManager, SelectAddressDialogFragment.TAG)
+        binding.btnAddNewAddress.setOnClickListener {
+            toggleNewAddressForm(true)
         }
 
-        binding.btnUseGps.setOnClickListener {
-            checkPermissionsAndFetchLocation()
+        binding.btnCancelAddAddress.setOnClickListener {
+            toggleNewAddressForm(false)
+            clearAddressForm()
         }
-        binding.btnSelectDate.setOnClickListener { showDatePicker() }
-        binding.btnSelectTime.setOnClickListener { showTimePicker() }
 
-        binding.btnPlaceOrder.setOnClickListener {
+        binding.btnSaveAddress.setOnClickListener {
             val street = binding.etStreet.text.toString().trim()
             val city = binding.etCity.text.toString().trim()
             val state = binding.etState.text.toString().trim()
             val zip = binding.etZip.text.toString().trim()
 
-            if (street.isEmpty() || city.isEmpty() || state.isEmpty() || zip.isEmpty()) {
-                Toast.makeText(context, "Please fill all address fields", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            if (binding.textSelectedDate.text.isBlank() || binding.textSelectedTime.text.isBlank()) {
-                Toast.makeText(context, "Please select date and time", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            val pickupAddress = Address(street, city, state, zip)
-            viewModel.placeOrder(pickupAddress)
-        }
-    }
-
-    private fun setupAddressSelection() {
-        parentFragmentManager.setFragmentResultListener(
-            SelectAddressDialogFragment.REQUEST_KEY,
-            viewLifecycleOwner
-        ) { _, bundle ->
-            val address = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                bundle.getParcelable(SelectAddressDialogFragment.KEY_ADDRESS, Address::class.java)
+            if (street.isNotEmpty() && city.isNotEmpty() && state.isNotEmpty() && zip.isNotEmpty()) {
+                val newAddress = Address(street, city, state, zip)
+                viewModel.addAddress(newAddress)
+                toggleNewAddressForm(false)
+                clearAddressForm()
             } else {
-                @Suppress("DEPRECATION")
-                bundle.getParcelable(SelectAddressDialogFragment.KEY_ADDRESS)
-            }
-            address?.let {
-                binding.etStreet.setText(it.street)
-                binding.etCity.setText(it.city)
-                binding.etState.setText(it.state)
-                binding.etZip.setText(it.zip)
+                Toast.makeText(context, "Please fill all address fields", Toast.LENGTH_SHORT).show()
             }
         }
+
+        binding.btnPlaceOrder.setOnClickListener {
+            if (selectedPickupAddress == null) {
+                Toast.makeText(context, "Please select or add a pickup address.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            viewModel.placeOrder(selectedPickupAddress!!)
+        }
+
+        binding.btnSelectDate.setOnClickListener { showDatePicker() }
+        binding.btnSelectTime.setOnClickListener { showTimePicker() }
     }
 
     private fun observeViewModel() {
         viewModel.currentUser.observe(viewLifecycleOwner) { user ->
-            user?.address?.firstOrNull()?.let {
-                binding.etStreet.setText(it.street)
-                binding.etCity.setText(it.city)
-                binding.etState.setText(it.state)
-                binding.etZip.setText(it.zip)
+            val addresses = user?.address ?: emptyList()
+            addressAdapter.submitList(addresses)
+            if (addresses.isNotEmpty()) {
+                selectedPickupAddress = addresses.first()
+                addressAdapter.setSelectedAddress(addresses.first())
+            }
+        }
+
+        viewModel.addressListUpdated.observe(viewLifecycleOwner) { event ->
+            event.getContentIfNotHandled()?.let { updatedUser ->
+                val newAddress = updatedUser.address?.lastOrNull()
+                if (newAddress != null) {
+                    selectedPickupAddress = newAddress
+                    addressAdapter.setSelectedAddress(newAddress)
+                }
             }
         }
 
@@ -149,9 +152,6 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
 
         viewModel.placeOrderResult.observe(viewLifecycleOwner) { result ->
             when (result) {
-                is PlaceOrderResult.Idle -> {
-                    binding.btnPlaceOrder.isEnabled = true
-                }
                 is PlaceOrderResult.Loading -> {
                     binding.btnPlaceOrder.isEnabled = false
                     binding.btnPlaceOrder.text = "Placing Order..."
@@ -166,11 +166,61 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
                     binding.btnPlaceOrder.text = "Place Order"
                     Toast.makeText(context, "Failed to place order: ${result.message}", Toast.LENGTH_LONG).show()
                 }
+                is PlaceOrderResult.Idle -> {
+                    binding.btnPlaceOrder.isEnabled = true
+                    binding.btnPlaceOrder.text = "Place Order"
+                }
             }
         }
 
         viewModel.cartItems.observe(viewLifecycleOwner) { updatePricing() }
         viewModel.appliedOffer.observe(viewLifecycleOwner) { updatePricing() }
+    }
+
+    private fun toggleNewAddressForm(show: Boolean) {
+        binding.newAddressForm.visibility = if (show) View.VISIBLE else View.GONE
+        binding.btnAddNewAddress.visibility = if (show) View.GONE else View.VISIBLE
+    }
+
+    private fun clearAddressForm() {
+        binding.etStreet.text?.clear()
+        binding.etCity.text?.clear()
+        binding.etState.text?.clear()
+        binding.etZip.text?.clear()
+    }
+
+    private fun updatePricing() {
+        if (_binding == null) return
+        val summary = viewModel.calculateTotal()
+        binding.textSubtotal.text = String.format("₹%.2f", summary.subtotal)
+        binding.textDiscount.text = String.format("-₹%.2f", summary.discount)
+        binding.textTotal.text = String.format("₹%.2f", summary.total)
+        binding.discountRow.visibility = if (summary.discount > 0) View.VISIBLE else View.GONE
+    }
+
+    private fun showDatePicker() {
+        val listener = DatePickerDialog.OnDateSetListener { _, year, month, day ->
+            selectedDate.set(Calendar.YEAR, year)
+            selectedDate.set(Calendar.MONTH, month)
+            selectedDate.set(Calendar.DAY_OF_MONTH, day)
+            binding.textSelectedDate.text = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(selectedDate.time)
+        }
+        DatePickerDialog(requireContext(), listener,
+            selectedDate.get(Calendar.YEAR),
+            selectedDate.get(Calendar.MONTH),
+            selectedDate.get(Calendar.DAY_OF_MONTH)).show()
+    }
+
+    private fun showTimePicker() {
+        val listener = TimePickerDialog.OnTimeSetListener { _, hour, minute ->
+            selectedTime.set(Calendar.HOUR_OF_DAY, hour)
+            selectedTime.set(Calendar.MINUTE, minute)
+            binding.textSelectedTime.text = SimpleDateFormat("hh:mm a", Locale.US).format(selectedTime.time)
+        }
+        TimePickerDialog(requireContext(), listener,
+            selectedTime.get(Calendar.HOUR_OF_DAY),
+            selectedTime.get(Calendar.MINUTE),
+            false).show()
     }
 
     private fun checkPermissionsAndFetchLocation() {
@@ -226,41 +276,6 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
                 }
             }
         }
-    }
-
-    private fun updatePricing() {
-        if (_binding == null) return
-
-        val summary = viewModel.calculateTotal()
-        binding.textSubtotal.text = String.format("₹%.2f", summary.subtotal)
-        binding.textDiscount.text = String.format("-₹%.2f", summary.discount)
-        binding.textTotal.text = String.format("₹%.2f", summary.total)
-        binding.discountRow.visibility = if (summary.discount > 0) View.VISIBLE else View.GONE
-    }
-
-    private fun showDatePicker() {
-        val listener = DatePickerDialog.OnDateSetListener { _, year, month, day ->
-            selectedDate.set(Calendar.YEAR, year)
-            selectedDate.set(Calendar.MONTH, month)
-            selectedDate.set(Calendar.DAY_OF_MONTH, day)
-            binding.textSelectedDate.text = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(selectedDate.time)
-        }
-        DatePickerDialog(requireContext(), listener,
-            selectedDate.get(Calendar.YEAR),
-            selectedDate.get(Calendar.MONTH),
-            selectedDate.get(Calendar.DAY_OF_MONTH)).show()
-    }
-
-    private fun showTimePicker() {
-        val listener = TimePickerDialog.OnTimeSetListener { _, hour, minute ->
-            selectedTime.set(Calendar.HOUR_OF_DAY, hour)
-            selectedTime.set(Calendar.MINUTE, minute)
-            binding.textSelectedTime.text = SimpleDateFormat("hh:mm a", Locale.US).format(selectedTime.time)
-        }
-        TimePickerDialog(requireContext(), listener,
-            selectedTime.get(Calendar.HOUR_OF_DAY),
-            selectedTime.get(Calendar.MINUTE),
-            false).show()
     }
 
     override fun onDestroyView() {

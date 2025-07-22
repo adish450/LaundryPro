@@ -1,27 +1,23 @@
 package com.dhobikart.app.viewmodels
 
-import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MediatorLiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.map
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.dhobikart.app.data.CartManager
 import com.dhobikart.app.data.SessionManager
 import com.dhobikart.app.models.*
 import com.dhobikart.app.repository.LaundryRepository
-import com.dhobikart.app.models.Address
 import kotlinx.coroutines.launch
 
 class LaundryViewModel : ViewModel() {
-    private val TAG = "LaundryViewModel"
     private val repository = LaundryRepository()
 
     val loginResult = MutableLiveData<LoginResult>(LoginResult.Idle)
     val registerResult = MutableLiveData<RegisterResult>(RegisterResult.Idle)
+    val navigateToTab = MutableLiveData<Int?>()
     val currentUser = MutableLiveData<User?>()
     val offers = MutableLiveData<List<Offer>>()
+    val forgotPasswordOtpSent = MutableLiveData<Boolean>()
+    val passwordResetSuccessful = MutableLiveData<Boolean>()
+    val error = MutableLiveData<String?>()
 
     private val _services = MutableLiveData<List<Service>>()
     val services: LiveData<List<Service>> = _services
@@ -29,31 +25,31 @@ class LaundryViewModel : ViewModel() {
     private val _orders = MutableLiveData<List<Order>>()
     val orders: LiveData<List<Order>> = _orders
 
-    // Delegate all cart-related LiveData and functions to the singleton CartManager
+    val previousAddresses: LiveData<List<Address>> = _orders.map { orders ->
+        orders.mapNotNull { it.pickupAddress }
+            .distinct()
+    }
+    private val _updateProfileResult = MutableLiveData<UpdateProfileResult>(UpdateProfileResult.Idle)
+    val updateProfileResult: LiveData<UpdateProfileResult> = _updateProfileResult
+
+    private val _addressListUpdated = MutableLiveData<Event<User>>()
+    val addressListUpdated: LiveData<Event<User>> = _addressListUpdated
+
     val cartItems = CartManager.cartItems
     val appliedOffer = CartManager.appliedOffer
 
-    // LiveData to signal navigation events
     val navigateToHome = MutableLiveData<Boolean>()
 
     private val _placeOrderResult = MutableLiveData<PlaceOrderResult>()
     val placeOrderResult: LiveData<PlaceOrderResult> = _placeOrderResult
 
-    // This LiveData will now hold the list of clothes with their prices included
+    private val _pricedClothItems = MutableLiveData<List<PricedClothItem>>()
+    val pricedClothItems: LiveData<List<PricedClothItem>> = _pricedClothItems
+
     private val _serviceCloths = MutableLiveData<List<ServiceCloth>>()
     val serviceCloths: LiveData<List<ServiceCloth>> = _serviceCloths
 
-    // NEW: LiveData to hold the grouped list for the checkout screen
     val groupedCartItems = MediatorLiveData<List<GroupedCartItems>>()
-
-    // LiveData to hold the list of unique previous addresses
-    val previousAddresses: LiveData<List<Address>> = _orders.map { orders ->
-        orders.mapNotNull { it.pickupAddress }
-            .distinct()
-    }
-
-    private val _updateProfileResult = MutableLiveData<UpdateProfileResult>(UpdateProfileResult.Idle)
-    val updateProfileResult: LiveData<UpdateProfileResult> = _updateProfileResult
 
     init {
         loadServices()
@@ -63,7 +59,6 @@ class LaundryViewModel : ViewModel() {
     }
 
     private fun setupGroupedCartObserver() {
-        // This will automatically re-calculate the grouped list whenever the cart or services change
         groupedCartItems.addSource(cartItems) { updateGroupedCart() }
         groupedCartItems.addSource(services) { updateGroupedCart() }
     }
@@ -80,21 +75,12 @@ class LaundryViewModel : ViewModel() {
         groupedCartItems.value = grouped
     }
 
-    /*private fun loadServices() {
-        viewModelScope.launch {
-            services.value = repository.getServices()
-        }
-    }*/
-
     fun loadServices() {
         viewModelScope.launch {
             try {
-                Log.d(TAG, "Fetching services from server...")
-                val servicesResult = repository.getServices()
-                _services.postValue(servicesResult)
-                Log.d(TAG, "Successfully fetched ${servicesResult.size} services.")
+                _services.value = repository.getServices()
             } catch (e: Exception) {
-                Log.e(TAG, "Error fetching services: ${e.message}", e)
+                // Handle error
             }
         }
     }
@@ -108,50 +94,34 @@ class LaundryViewModel : ViewModel() {
     fun loadItemsForService(serviceId: String) {
         viewModelScope.launch {
             try {
-                // The logic is now much simpler, with only one repository call
-                Log.d(TAG, "Fetching itemsForService from server...")
-                val items = repository.getServiceWithClothes(serviceId)
-                _serviceCloths.postValue(items)
-                Log.d(TAG, "Successfully fetched ${items.size} services.")
+                _serviceCloths.postValue(repository.getServiceWithClothes(serviceId))
             } catch (e: Exception) {
                 // Handle error
-                Log.e(TAG, "Error fetching itemsForService: ${e.message}", e)
             }
         }
     }
 
-
-    /**
-     * Checks SharedPreferences for a saved user session and updates currentUser.
-     * This is public so MainActivity can call it in onResume.
-     */
     fun checkUserSession() {
         val savedUser = SessionManager.getUser()
         if (currentUser.value?.id != savedUser?.id) {
             currentUser.value = savedUser
-            // If a user is found, load their orders
             if (savedUser != null) {
                 loadUserOrders()
             }
         }
     }
 
-
     fun login(email: String, password: String) {
         viewModelScope.launch {
             loginResult.value = LoginResult.Loading
             try {
-                Log.d(TAG, "Logging in...")
                 val response = repository.login(email, password)
                 SessionManager.saveLoginDetails(response.token, response.user)
-                currentUser.value = response.user // Update state
-                // Load orders right after setting the current user
+                currentUser.value = response.user
                 loadUserOrders()
                 loginResult.value = LoginResult.Success(response.user)
-                Log.d(TAG, "Successfully fetched ${response.user} user.")
             } catch (e: Exception) {
                 loginResult.value = LoginResult.Error(e.message ?: "An unknown error occurred")
-                Log.e(TAG, "Error logging in: ${e.message}", e)
             }
         }
     }
@@ -160,26 +130,40 @@ class LaundryViewModel : ViewModel() {
         viewModelScope.launch {
             registerResult.value = RegisterResult.Loading
             try {
-                Log.d(TAG, "SignUp started...")
                 val response = repository.register(name, email, password, phone)
-                // After successful registration, save user session and auto-login
-                // You might need to adjust your RegisterResponse to include a token
-                // For now, assuming registration doesn't return a token to save.
-                // If it does, save it like in the login function.
                 SessionManager.saveLoginDetails(response.token, response.user)
                 currentUser.value = response.user
                 registerResult.value = RegisterResult.Success(response.user)
                 loginResult.value = LoginResult.Success(response.user)
-                Log.d(TAG, "Successfully signedUp ${response.user} user.")
             } catch (e: Exception) {
                 registerResult.value = RegisterResult.Error(e.message ?: "An unknown error occurred")
-                Log.e(TAG, "Error signing up: ${e.message}", e)
             }
         }
     }
 
+    /*fun forgotPassword(email: String) {
+        viewModelScope.launch {
+            try {
+                repository.forgotPassword(email)
+                forgotPasswordOtpSent.value = true
+            } catch (e: Exception) {
+                error.value = e.message ?: "An unknown error occurred"
+            }
+        }
+    }
+
+    fun resetPassword(email: String, otp: String, newPassword: String) {
+        viewModelScope.launch {
+            try {
+                repository.resetPassword(email, otp, newPassword)
+                passwordResetSuccessful.value = true
+            } catch (e: Exception) {
+                error.value = e.message ?: "An unknown error occurred"
+            }
+        }
+    }*/
+
     fun addToCart(serviceCloth: ServiceCloth, serviceId: String) {
-        // We now pass the serviceCloth object to the CartManager
         CartManager.addToCart(serviceCloth, serviceId)
     }
 
@@ -192,7 +176,6 @@ class LaundryViewModel : ViewModel() {
     }
 
     fun applyOffer(offerCode: String): Boolean {
-        // This logic can stay here if it depends on other ViewModel data
         val offer = offers.value?.find { it.code == offerCode }
         return if (offer != null) {
             CartManager.applyOffer(offer)
@@ -210,7 +193,6 @@ class LaundryViewModel : ViewModel() {
         viewModelScope.launch {
             _placeOrderResult.value = PlaceOrderResult.Loading
             try {
-                Log.d(TAG, "Placing order...")
                 val user = currentUser.value ?: throw Exception("User not logged in")
                 val items = cartItems.value ?: emptyList()
                 val total = calculateTotal().total
@@ -219,10 +201,8 @@ class LaundryViewModel : ViewModel() {
 
                 CartManager.clearCart()
                 _placeOrderResult.value = PlaceOrderResult.Success(order)
-                Log.d(TAG, "Successfully placed order: ${order.id}")
             } catch (e: Exception) {
                 _placeOrderResult.value = PlaceOrderResult.Error(e.message ?: "Unknown error")
-                Log.e(TAG, "Error placing order: ${e.message}", e)
             }
         }
     }
@@ -235,18 +215,17 @@ class LaundryViewModel : ViewModel() {
         viewModelScope.launch {
             _updateProfileResult.value = UpdateProfileResult.Loading
             try {
-                Log.d(TAG, "Updating user profile...")
                 val updatedUser = repository.updateUserProfile(name, email, phone, addresses)
                 val currentToken = SessionManager.getToken()
                 if (currentToken != null) {
                     SessionManager.saveLoginDetails(currentToken, updatedUser)
                     currentUser.value = updatedUser
+                    // **THE FIX:** The event now contains the updated user object.
+                    _addressListUpdated.value = Event(updatedUser)
                 }
                 _updateProfileResult.value = UpdateProfileResult.Success(updatedUser)
-                Log.d(TAG, "Successfully updated user profile: ${updatedUser.name}")
             } catch (e: Exception) {
                 _updateProfileResult.value = UpdateProfileResult.Error(e.message ?: "An unknown error occurred")
-                Log.e(TAG, "Error updating user profile: ${e.message}", e)
             }
         }
     }
@@ -255,7 +234,7 @@ class LaundryViewModel : ViewModel() {
         val user = currentUser.value ?: return
         val currentAddresses = user.address?.toMutableList() ?: mutableListOf()
         currentAddresses.add(newAddress)
-        updateUserProfile(user.name ?: "", user.email ?: "", user.phone ?: "", currentAddresses)
+        updateUserProfile(user.name ?: "", user.email ?: "", user.phone ?: "", currentAddresses.distinct())
     }
 
     fun updateAddress(oldAddress: Address, newAddress: Address) {
@@ -264,7 +243,7 @@ class LaundryViewModel : ViewModel() {
         val index = currentAddresses.indexOf(oldAddress)
         if (index != -1) {
             currentAddresses[index] = newAddress
-            updateUserProfile(user.name ?: "", user.email ?: "", user.phone ?: "", currentAddresses)
+            updateUserProfile(user.name ?: "", user.email ?: "", user.phone ?: "", currentAddresses.distinct())
         }
     }
 
@@ -272,7 +251,7 @@ class LaundryViewModel : ViewModel() {
         val user = currentUser.value ?: return
         val currentAddresses = user.address?.toMutableList() ?: mutableListOf()
         currentAddresses.remove(addressToDelete)
-        updateUserProfile(user.name ?: "", user.email ?: "", user.phone ?: "", currentAddresses)
+        updateUserProfile(user.name ?: "", user.email ?: "", user.phone ?: "", currentAddresses.distinct())
     }
 
     fun onUpdateProfileHandled() {
@@ -288,14 +267,10 @@ class LaundryViewModel : ViewModel() {
         val userId = currentUser.value?.id ?: return
         viewModelScope.launch {
             try {
-                // This call remains the same and will now receive the correct list
-                Log.d(TAG, "Fetching user orders...")
                 val userOrders = repository.getUserOrders(userId)
                 _orders.postValue(userOrders)
-                Log.d(TAG, "Successfully fetched ${userOrders.size} user orders.")
             } catch (e: Exception) {
                 // Handle error
-                Log.e(TAG, "Error fetching user orders: ${e.message}", e)
             }
         }
     }
@@ -304,15 +279,12 @@ class LaundryViewModel : ViewModel() {
         SessionManager.clear()
         CartManager.clearCart()
         currentUser.value = null
-        // Reset states
         loginResult.value = LoginResult.Idle
         registerResult.value = RegisterResult.Idle
-        _orders.value = emptyList() // This is the fix: Clear the orders list
-        // Trigger the navigation event
+        _orders.value = emptyList()
         navigateToHome.value = true
     }
 
-    // Call this after the navigation is handled to prevent re-triggering
     fun onHomeNavigationComplete() {
         navigateToHome.value = false
     }

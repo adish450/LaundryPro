@@ -32,7 +32,7 @@ interface ApiService {
     suspend fun getAllOrders(): Response<AllOrdersResponse>
 
     @POST("api/profile/updateprofile")
-    suspend fun updateUserProfile(@Body request: UpdateProfileRequest): Response<User>
+    suspend fun updateUserProfile(@Body request: UpdateProfileRequest): Response<UpdateUserResponse>
 
 
 }

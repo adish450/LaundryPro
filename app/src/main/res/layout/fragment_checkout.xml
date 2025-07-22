@@ -6,8 +6,6 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="?android:colorBackground"
-    android:clickable="true"
-    android:focusable="true"
     tools:context=".fragments.CheckoutFragment">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -31,6 +29,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- Address Section -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -42,81 +41,83 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Pickup Address"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                            android:layout_centerVertical="true"
-                            android:layout_alignParentStart="true"/>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btn_choose_address"
-                            style="@style/Widget.Material3.Button.TextButton.Icon"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Select Previous"
-                            app:icon="@drawable/ic_history"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"/>
-
-                    </RelativeLayout>
-
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/layout_street"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        android:layout_width="match_parent"
+                    <TextView
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:hint="Street Address">
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/et_street"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content" />
-                    </com.google.android.material.textfield.TextInputLayout>
+                        android:text="Pickup Address"
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/layout_city"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recycler_saved_addresses"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:hint="City">
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/et_city"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content" />
-                    </com.google.android.material.textfield.TextInputLayout>
+                        tools:listitem="@layout/item_selectable_address"
+                        tools:itemCount="2"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_add_new_address"
+                        style="@style/Widget.Material3.Button.TextButton.Icon"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Add New Address"
+                        app:icon="@drawable/ic_add"
+                        android:layout_gravity="end"/>
 
                     <LinearLayout
+                        android:id="@+id/new_address_form"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginTop="8dp">
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        tools:visibility="visible">
+
                         <com.google.android.material.textfield.TextInputLayout
-                            android:id="@+id/layout_state"
                             style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginEnd="4dp"
-                            android:hint="State">
+                            android:layout_marginTop="8dp"
+                            android:hint="Street Address">
                             <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/et_state"
+                                android:id="@+id/et_street"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content" />
                         </com.google.android.material.textfield.TextInputLayout>
-                        <com.google.android.material.textfield.TextInputLayout
-                            android:id="@+id/layout_zip"
-                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="4dp"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="8dp">
+                            <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="4dp"
+                                android:hint="City">
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/et_city"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content" />
+                            </com.google.android.material.textfield.TextInputLayout>
+                            <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:hint="State">
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/et_state"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content" />
+                            </com.google.android.material.textfield.TextInputLayout>
+                        </LinearLayout>
+                        <com.google.android.material.textfield.TextInputLayout
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
                             android:hint="Zip Code">
                             <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/et_zip"
@@ -124,23 +125,47 @@
                                 android:layout_height="wrap_content"
                                 android:inputType="number" />
                         </com.google.android.material.textfield.TextInputLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="end"
+                            android:layout_marginTop="8dp">
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_cancel_add_address"
+                                style="@style/Widget.Material3.Button.TextButton"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Cancel"/>
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_save_address"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Save Address"
+                                android:layout_marginStart="8dp"/>
+                        </LinearLayout>
                     </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_use_gps"
-                        style="@style/Widget.Material3.Button.TextButton.Icon"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="end"
-                        android:text="Use Current Location"
-                        app:icon="@drawable/ic_gps" />
-
+            <!-- Date/Time and Order Summary Cards -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardElevation="1dp"
+                app:cardCornerRadius="12dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_select_date"
                         style="@style/Widget.Material3.Button.OutlinedButton.Icon"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
                         android:text="Select Date"
                         app:icon="@drawable/ic_calendar" />
                     <TextView

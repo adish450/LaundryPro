@@ -209,7 +209,8 @@ class LaundryRepository {
         val request = UpdateProfileRequest(name, email, phone, addresses)
         val response = apiService.updateUserProfile(request)
         if (response.isSuccessful) {
-            return response.body() ?: throw Exception("User data not found in response")
+            // **THE FIX:** Extract the nested 'user' object from the response body.
+            return response.body()?.user ?: throw Exception("User data not found in response")
         } else {
             throw Exception("Failed to update profile: ${response.errorBody()?.string()}")
         }

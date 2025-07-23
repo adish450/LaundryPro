@@ -6,9 +6,12 @@ import android.app.TimePickerDialog
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -69,6 +72,7 @@ class CheckoutFragment : Fragment() {
         setupRecyclerViews()
         setupClickListeners()
         observeViewModel()
+        setupAddressDropdowns()
     }
 
     private fun setupToolbar() {
@@ -105,13 +109,18 @@ class CheckoutFragment : Fragment() {
             val state = binding.etState.text.toString().trim()
             val zip = binding.etZip.text.toString().trim()
 
-            if (street.isNotEmpty() && city.isNotEmpty() && state.isNotEmpty() && zip.isNotEmpty()) {
+            // **THE FIX:** Added validation for pincode and empty fields.
+            val pincodeRegex = Regex("^[1-9][0-9]{5}$")
+
+            if (street.isEmpty() || city.isEmpty() || state.isEmpty() || zip.isEmpty()) {
+                Toast.makeText(context, "Please fill all address fields", Toast.LENGTH_SHORT).show()
+            } else if (!zip.matches(pincodeRegex)) {
+                Toast.makeText(context, "Please enter a valid 6-digit Indian pincode.", Toast.LENGTH_SHORT).show()
+            } else {
                 val newAddress = Address(street, city, state, zip)
                 viewModel.addAddress(newAddress)
                 toggleNewAddressForm(false)
                 clearAddressForm()
-            } else {
-                Toast.makeText(context, "Please fill all address fields", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -128,6 +137,24 @@ class CheckoutFragment : Fragment() {
         binding.btnUseGps.setOnClickListener {
             checkPermissionsAndFetchLocation()
         }
+
+        binding.etZip.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                val zip = s.toString()
+                if (zip.length == 6) {
+                    val pincodeRegex = Regex("^[1-9][0-9]{5}$")
+                    if (!zip.matches(pincodeRegex)) {
+                        binding.layoutZip.error = "Invalid pincode (cannot start with 0)"
+                    } else {
+                        binding.layoutZip.error = null // Clear the error if valid
+                    }
+                } else {
+                    binding.layoutZip.error = null // Clear error while typing if length is not 6
+                }
+            }
+        })
     }
 
     private fun observeViewModel() {
@@ -179,6 +206,18 @@ class CheckoutFragment : Fragment() {
 
         viewModel.cartItems.observe(viewLifecycleOwner) { updatePricing() }
         viewModel.appliedOffer.observe(viewLifecycleOwner) { updatePricing() }
+    }
+
+    private fun setupAddressDropdowns() {
+        // Populate the States dropdown
+        val states = resources.getStringArray(R.array.india_states)
+        val statesAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, states)
+        binding.etState.setAdapter(statesAdapter)
+
+        // Populate the Cities dropdown
+        val cities = resources.getStringArray(R.array.delhi_cities)
+        val citiesAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, cities)
+        binding.etCity.setAdapter(citiesAdapter)
     }
 
     private fun toggleNewAddressForm(show: Boolean) {

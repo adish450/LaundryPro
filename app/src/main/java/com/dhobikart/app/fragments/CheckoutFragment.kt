@@ -16,6 +16,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.dhobikart.app.MainActivity
 import com.dhobikart.app.R
 import com.dhobikart.app.adapters.CheckoutGroupedAdapter
 import com.dhobikart.app.adapters.SelectableAddressAdapter
@@ -31,7 +32,7 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
 
-class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
+class CheckoutFragment : Fragment() {
 
     private var _binding: FragmentCheckoutBinding? = null
     private val binding get() = _binding!!
@@ -124,6 +125,9 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
 
         binding.btnSelectDate.setOnClickListener { showDatePicker() }
         binding.btnSelectTime.setOnClickListener { showTimePicker() }
+        binding.btnUseGps.setOnClickListener {
+            checkPermissionsAndFetchLocation()
+        }
     }
 
     private fun observeViewModel() {
@@ -255,7 +259,7 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
 
     private fun reverseGeocodeLocation(location: android.location.Location) {
         val geocoder = Geocoder(requireContext(), Locale.getDefault())
-        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+        lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
                 val geocodedAddress = addresses?.firstOrNull()

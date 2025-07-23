@@ -7,7 +7,6 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import com.dhobikart.app.R
 import com.dhobikart.app.databinding.FragmentEditProfileBinding
 import com.dhobikart.app.models.UpdateProfileResult
 import com.dhobikart.app.viewmodels.LaundryViewModel
@@ -52,11 +51,12 @@ class EditProfileFragment : Fragment() {
     private fun setupClickListeners() {
         binding.btnSaveChanges.setOnClickListener {
             val name = binding.etName.text.toString().trim()
-            val email = binding.etEmail.text.toString().trim()
             val phone = binding.etPhone.text.toString().trim()
 
-            if (name.isNotEmpty() && email.isNotEmpty() && phone.isNotEmpty()) {
-                // **THE FIX:** Get the current addresses and pass them to the update function.
+            // Get the original email from the ViewModel, as it's not editable.
+            val email = viewModel.currentUser.value?.email ?: ""
+
+            if (name.isNotEmpty() && phone.isNotEmpty()) {
                 val currentAddresses = viewModel.currentUser.value?.address ?: emptyList()
                 viewModel.updateUserProfile(name, email, phone, currentAddresses)
             } else {
@@ -84,7 +84,8 @@ class EditProfileFragment : Fragment() {
                     Toast.makeText(context, "Failed to update profile: ${result.message}", Toast.LENGTH_LONG).show()
                 }
                 is UpdateProfileResult.Idle -> {
-                    // Do nothing
+                    binding.btnSaveChanges.isEnabled = true
+                    binding.btnSaveChanges.text = "Save Changes"
                 }
             }
         }
@@ -92,7 +93,7 @@ class EditProfileFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        // Reset the result state when the view is destroyed
+        // Reset the result state when the view is destroyed to prevent stale messages.
         viewModel.onUpdateProfileHandled()
         _binding = null
     }

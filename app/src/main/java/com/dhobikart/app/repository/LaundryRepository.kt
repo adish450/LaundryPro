@@ -53,7 +53,7 @@ class LaundryRepository {
             "New customers get 50% off",
             "FIRST50",
             50.0,
-            "2024-12-31"
+            "2025-12-31"
         ),
         Offer(
             "2",
@@ -61,9 +61,15 @@ class LaundryRepository {
             "Same day delivery at no extra cost",
             "EXPRESS24",
             0.0,
-            "2024-11-30"
+            "2025-12-31"
         ),
-        Offer("3", "Weekend Special", "20% off weekend orders", "WEEKEND20", 20.0, "2024-12-31")
+        Offer(
+            "3",
+            "Weekend Special",
+            "20% off weekend orders",
+            "WEEKEND20",
+            20.0,
+            "2025-12-31")
     )
 
     /*suspend fun getServices(): List<LaundryService> {
@@ -74,10 +80,13 @@ class LaundryRepository {
     suspend fun getServices(): List<Service> {
         val response = apiService.getServices()
         if (response.isSuccessful) {
-            // This is the fix: Extract the list from the 'data' field of the response body
-            return response.body()?.data ?: emptyList()
+            val responseBody = response.body() ?: throw Exception("Empty response body for services")
+            // **THE FIX:** Manually parse the JSON string from the response body.
+            val jsonString = responseBody.string()
+            val serviceResponse = Gson().fromJson(jsonString, ServiceResponse::class.java)
+            return serviceResponse.data
         } else {
-            throw Exception("Failed to fetch services")
+            throw Exception("Failed to fetch services: ${response.errorBody()?.string()}")
         }
     }
 

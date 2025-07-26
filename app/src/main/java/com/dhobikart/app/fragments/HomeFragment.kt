@@ -52,7 +52,6 @@ class HomeFragment : Fragment() {
         binding.recyclerOffers.adapter = offersAdapter
 
         servicesAdapter = ServicesAdapter { service ->
-            // **THE FIX:** Pass both the service ID and the service name.
             val fragment = ItemsFragment.newInstance(service.id, service.name)
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, fragment)
@@ -65,19 +64,19 @@ class HomeFragment : Fragment() {
 
     private fun observeViewModel() {
         viewModel.offers.observe(viewLifecycleOwner) { offers ->
-            // Stop shimmer and show the recycler view for offers
             binding.shimmerOffers.stopShimmer()
             binding.shimmerOffers.visibility = View.GONE
             binding.recyclerOffers.visibility = View.VISIBLE
-            offersAdapter.updateOffers(offers)
+            // **THE FIX:** Use submitList() to update the adapter.
+            offersAdapter.submitList(offers)
         }
 
         viewModel.services.observe(viewLifecycleOwner) { services ->
-            // Stop shimmer and show the recycler view for services
             binding.shimmerServices.stopShimmer()
             binding.shimmerServices.visibility = View.GONE
             binding.recyclerServices.visibility = View.VISIBLE
-            servicesAdapter.updateServices(services)
+            // **THE FIX:** Use submitList() to update the adapter.
+            servicesAdapter.submitList(services)
         }
 
         viewModel.cartItems.observe(viewLifecycleOwner) { cartItems ->

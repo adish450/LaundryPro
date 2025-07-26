@@ -1,5 +1,6 @@
 package com.dhobikart.app.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.*
 import com.dhobikart.app.data.CartManager
 import com.dhobikart.app.data.SessionManager
@@ -8,6 +9,7 @@ import com.dhobikart.app.repository.LaundryRepository
 import kotlinx.coroutines.launch
 
 class LaundryViewModel : ViewModel() {
+    private val TAG = "LaundryViewModel"
     private val repository = LaundryRepository()
 
     val loginResult = MutableLiveData<LoginResult>(LoginResult.Idle)
@@ -78,9 +80,12 @@ class LaundryViewModel : ViewModel() {
     fun loadServices() {
         viewModelScope.launch {
             try {
-                _services.value = repository.getServices()
+                Log.d(TAG, "Fetching services from server...")
+                val servicesResult = repository.getServices()
+                _services.postValue(servicesResult)
+                Log.d(TAG, "Successfully fetched ${servicesResult.size} services.")
             } catch (e: Exception) {
-                // Handle error
+                Log.e(TAG, "Error fetching services: ${e.message}", e)
             }
         }
     }

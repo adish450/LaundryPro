@@ -2,6 +2,7 @@ package com.dhobikart.app.data
 
 import com.dhobikart.app.models.*
 import com.laundrypro.app.models.AllOrdersResponse
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -25,7 +26,7 @@ interface ApiService {
     suspend fun resetPassword(@Body request: ResetPasswordRequest): Response<Unit>
 
     @GET("api/service/allservices")
-    suspend fun getServices(): Response<ServiceResponse>
+    suspend fun getServices(): Response<ResponseBody>
 
     @GET("api/service/clothes/{serviceId}")
     suspend fun getServiceWithClothes(@Path("serviceId") serviceId: String): Response<ServiceWithClothesResponse>

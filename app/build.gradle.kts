@@ -12,8 +12,8 @@ android {
         applicationId = "com.dhobikart.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.3"
+        versionCode = 5
+        versionName = "1.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -89,6 +89,9 @@ dependencies {
 
     // Add the Facebook Shimmer library for loading animations
     implementation(libs.shimmer)
+
+    // Add this line for ViewPager2
+    implementation(libs.androidx.viewpager2)
 
     // Testing
     testImplementation(libs.junit)

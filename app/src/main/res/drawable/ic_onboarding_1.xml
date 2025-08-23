@@ -1,0 +1,21 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <!-- Phone body -->
+    <path
+        android:fillColor="#E0F7FA"
+        android:pathData="M50,20 h100 a10,10 0 0 1 10,10 v140 a10,10 0 0 1 -10,10 h-100 a10,10 0 0 1 -10,-10 v-140 a10,10 0 0 1 10,-10 z"/>
+
+    <!-- Washing machine circle -->
+    <path
+        android:fillColor="#80DEEA"
+        android:pathData="M100,70 a40,40 0 1,0 0.1,0"/>
+
+    <!-- Water wave inside -->
+    <path
+        android:fillColor="#26C6DA"
+        android:pathData="M60,100 q20,-20 40,0 t40,0 v20 h-80 z"/>
+</vector>

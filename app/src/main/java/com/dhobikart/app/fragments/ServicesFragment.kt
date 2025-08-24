@@ -10,7 +10,6 @@ import com.dhobikart.app.adapters.ServicesAdapter
 import com.dhobikart.app.databinding.FragmentServicesBinding
 import com.dhobikart.app.viewmodels.LaundryViewModel
 
-
 class ServicesFragment : Fragment(R.layout.fragment_services) {
 
     private var _binding: FragmentServicesBinding? = null
@@ -36,7 +35,7 @@ class ServicesFragment : Fragment(R.layout.fragment_services) {
     private fun setupRecyclerView() {
         servicesAdapter = ServicesAdapter { service ->
             parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, ItemsFragment.newInstance(service.id, service.name))
+                .replace(R.id.fragment_container, ItemsFragment.newInstance(service.id.toString(), service.name))
                 .addToBackStack(null)
                 .commit()
         }

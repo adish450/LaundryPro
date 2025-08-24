@@ -72,12 +72,12 @@ class LaundryRepository {
             "2025-12-31")
     )
 
-    /*suspend fun getServices(): List<LaundryService> {
+    suspend fun getServices(): List<LaundryService> {
         delay(500) // Simulate network delay
         return mockServices
-    }*/
+    }
 
-    suspend fun getServices(): List<Service> {
+    /*suspend fun getServices(): List<Service> {
         val response = apiService.getServices()
         if (response.isSuccessful) {
             val responseBody = response.body() ?: throw Exception("Empty response body for services")
@@ -88,7 +88,7 @@ class LaundryRepository {
         } else {
             throw Exception("Failed to fetch services: ${response.errorBody()?.string()}")
         }
-    }
+    }*/
 
     suspend fun getServiceWithClothes(serviceId: String): List<ServiceCloth> {
         val response = apiService.getServiceWithClothes(serviceId)

@@ -24,9 +24,9 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         create("alpha") {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            //isDebuggable = true
+            isMinifyEnabled = false
+            isShrinkResources = false
+            isDebuggable = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             applicationIdSuffix = ".alpha"
             signingConfig = signingConfigs.getByName("debug")

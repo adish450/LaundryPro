@@ -4,11 +4,12 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.dhobikart.app.databinding.ItemServiceRecommendationBinding
+import com.dhobikart.app.models.LaundryService
 import com.dhobikart.app.models.Service
 
 class ServiceRecommendationAdapter(
-    private var services: List<Service>,
-    private val onBookNowClicked: (Service) -> Unit
+    private var services: List<LaundryService>,
+    private val onBookNowClicked: (LaundryService) -> Unit
 ) : RecyclerView.Adapter<ServiceRecommendationAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -23,7 +24,7 @@ class ServiceRecommendationAdapter(
     override fun getItemCount() = services.size
 
     class ViewHolder(private val binding: ItemServiceRecommendationBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(service: Service, onBookNowClicked: (Service) -> Unit) {
+        fun bind(service: LaundryService, onBookNowClicked: (LaundryService) -> Unit) {
             binding.recommendationTitle.text = service.name
             binding.recommendationDescription.text = service.description
             binding.btnBookNow.setOnClickListener { onBookNowClicked(service) }

@@ -19,6 +19,9 @@ class LaundryViewModel : ViewModel() {
     val offers = MutableLiveData<List<Offer>>()
     val forgotPasswordOtpSent = MutableLiveData<Boolean>()
     val passwordResetSuccessful = MutableLiveData<Boolean>()
+    private val _forgotPasswordResult = MutableLiveData<ForgotPasswordResult>(ForgotPasswordResult.Idle)
+    val forgotPasswordResult: LiveData<ForgotPasswordResult> = _forgotPasswordResult
+
     val error = MutableLiveData<String?>()
 
     private val _services = MutableLiveData<List<LaundryService>>()

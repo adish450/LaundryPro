@@ -1,91 +1,101 @@
 package com.dhobikart.app.fragments
 
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.dhobikart.app.R
 import com.dhobikart.app.adapters.OffersAdapter
-import com.dhobikart.app.adapters.ServicesAdapter
+import com.dhobikart.app.adapters.ServiceRecommendationAdapter
 import com.dhobikart.app.databinding.FragmentHomeBinding
 import com.dhobikart.app.viewmodels.LaundryViewModel
 
-class HomeFragment : Fragment() {
+class HomeFragment : Fragment(R.layout.fragment_home) {
+
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
-
     private val viewModel: LaundryViewModel by activityViewModels()
-    private lateinit var servicesAdapter: ServicesAdapter
-    private lateinit var offersAdapter: OffersAdapter
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        _binding = FragmentHomeBinding.inflate(inflater, container, false)
-        return binding.root
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        _binding = FragmentHomeBinding.bind(view)
 
-        setupRecyclerViews()
+        setupToolbar()
+        setupClickListeners()
         observeViewModel()
+    }
 
-        // Start the shimmer animations
-        binding.shimmerOffers.startShimmer()
-        binding.shimmerServices.startShimmer()
-
-        viewModel.loadServices()
-        binding.cartIconContainer.setOnClickListener {
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, CartFragment())
-                .addToBackStack(null)
-                .commit()
+    private fun setupToolbar() {
+        binding.toolbar.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.action_cart -> {
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, CartFragment())
+                        .addToBackStack(null)
+                        .commit()
+                    true
+                }
+                else -> false
+            }
         }
     }
 
-    private fun setupRecyclerViews() {
-        offersAdapter = OffersAdapter { offer ->
-            viewModel.applyOffer(offer.code)
-        }
-        binding.recyclerOffers.adapter = offersAdapter
-
-        servicesAdapter = ServicesAdapter { service ->
-            val fragment = ItemsFragment.newInstance(service.id, service.name)
+    private fun setupClickListeners() {
+        binding.upcomingOrderCard.setOnClickListener {
+            // If there's an upcoming order, this can navigate to the order details
+            // For now, it navigates to the main orders list
             parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, fragment)
+                .replace(R.id.fragment_container, OrdersFragment())
                 .addToBackStack(null)
                 .commit()
         }
-        binding.recyclerServices.layoutManager = GridLayoutManager(context, 2)
-        binding.recyclerServices.adapter = servicesAdapter
     }
 
     private fun observeViewModel() {
-        viewModel.offers.observe(viewLifecycleOwner) { offers ->
-            binding.shimmerOffers.stopShimmer()
-            binding.shimmerOffers.visibility = View.GONE
-            binding.recyclerOffers.visibility = View.VISIBLE
-            // **THE FIX:** Use submitList() to update the adapter.
-            offersAdapter.submitList(offers)
+        viewModel.currentUser.observe(viewLifecycleOwner) { user ->
+            binding.textWelcome.text = user?.let { "Welcome back, ${it.name}!" } ?: "Welcome!"
+        }
+
+        viewModel.orders.observe(viewLifecycleOwner) { orders ->
+            val upcomingOrder = orders.firstOrNull { it.status == "Pending" || it.status == "Picked" }
+            if (upcomingOrder != null) {
+                binding.upcomingOrderCard.visibility = View.VISIBLE
+                binding.upcomingOrderTitle.text = "Pickup Scheduled"
+                binding.upcomingOrderSubtitle.text = "Tomorrow, 2 PM - 4 PM" // Replace with actual data
+            } else {
+                binding.upcomingOrderCard.visibility = View.GONE
+            }
         }
 
         viewModel.services.observe(viewLifecycleOwner) { services ->
-            binding.shimmerServices.stopShimmer()
-            binding.shimmerServices.visibility = View.GONE
-            binding.recyclerServices.visibility = View.VISIBLE
-            // **THE FIX:** Use submitList() to update the adapter.
-            servicesAdapter.submitList(services)
+            val recommendations = services.shuffled().take(2) // Show 2 random services
+            binding.recyclerRecommendations.apply {
+                layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+                adapter = ServiceRecommendationAdapter(recommendations) { service ->
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, ItemsFragment.newInstance(service.id, service.name))
+                        .addToBackStack(null)
+                        .commit()
+                }
+            }
         }
 
-        viewModel.cartItems.observe(viewLifecycleOwner) { cartItems ->
-            val itemCount = cartItems?.sumOf { it.quantity } ?: 0
-            if (itemCount > 0) {
-                binding.cartBadge.text = itemCount.toString()
-                binding.cartBadge.visibility = View.VISIBLE
+        viewModel.offers.observe(viewLifecycleOwner) { offers ->
+            if (offers.isNullOrEmpty()) {
+                binding.recyclerOffers.visibility = View.GONE
             } else {
-                binding.cartBadge.visibility = View.GONE
+                binding.recyclerOffers.visibility = View.VISIBLE
+                binding.recyclerOffers.apply {
+                    layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+                    adapter = OffersAdapter(offers) {
+                        // Handle "Shop Now" click
+                        parentFragmentManager.beginTransaction()
+                            .replace(R.id.fragment_container, ServicesFragment())
+                            .addToBackStack(null)
+                            .commit()
+                    }
+                }
             }
         }
     }

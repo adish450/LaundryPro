@@ -3,68 +3,70 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="320dp"
-    android:layout_height="150dp"
-    android:layout_marginStart="8dp"
-    android:layout_marginEnd="8dp"
+    android:layout_width="match_parent"
+    android:layout_height="200dp"
+    android:layout_marginEnd="16dp"
     app:cardCornerRadius="12dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/bg_offer_card"
         android:padding="16dp">
+
+        <ImageView
+            android:id="@+id/offer_image"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:contentDescription="Detergent bottle"
+            android:src="@drawable/detergent_placeholder"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/special_offer_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Special Offer"
+            android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/offer_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-            android:textColor="@color/white"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@+id/offer_image"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            tools:text="50% OFF First Order" />
+            app:layout_constraintTop_toBottomOf="@id/special_offer_label"
+            tools:text="20% Off Your Next Order" />
 
         <TextView
             android:id="@+id/offer_description"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_marginTop="4dp"
-            android:textColor="@color/white"
-            android:alpha="0.8"
-            app:layout_constraintBottom_toTopOf="@id/offer_code"
-            app:layout_constraintEnd_toEndOf="parent"
+            android:ellipsize="end"
+            android:maxLines="2"
+            app:layout_constraintBottom_toTopOf="@+id/btn_shop_now"
+            app:layout_constraintEnd_toStartOf="@+id/offer_image"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/offer_title"
-            tools:text="New customers get 50% off their very first laundry order placed through the app." />
+            tools:text="Use code CLEAN20 at checkout." />
 
-        <TextView
-            android:id="@+id/text_offer_valid_until"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_shop_now"
+            style="@style/Widget.App.Button.Secondary"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:alpha="0.8"
-            android:textColor="@color/white"
-            android:textSize="12sp"
+            android:text="Shop Now"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            tools:text="Valid until: 2024-12-31" />
-
-        <TextView
-            android:id="@+id/offer_code"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="4dp"
-            android:background="@drawable/bg_discount_badge"
-            android:paddingStart="8dp"
-            android:paddingTop="4dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="4dp"
-            android:textColor="@color/text_primary"
-            android:textStyle="bold"
-            app:layout_constraintBottom_toTopOf="@id/text_offer_valid_until"
-            app:layout_constraintStart_toStartOf="parent"
-            tools:text="FIRST50" />
+            app:layout_constraintStart_toStartOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

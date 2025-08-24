@@ -44,4 +44,10 @@
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowIsFloating">true</item>
     </style>
+
+    <!-- Custom style for the light gray buttons -->
+    <style name="Widget.App.Button.Secondary" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/light_gray_background</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
 </resources>

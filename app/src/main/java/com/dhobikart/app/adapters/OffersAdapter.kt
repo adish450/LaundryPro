@@ -2,48 +2,31 @@ package com.dhobikart.app.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.dhobikart.app.databinding.ItemOfferBinding
 import com.dhobikart.app.models.Offer
 
-class OffersAdapter(private val onOfferClicked: (Offer) -> Unit) :
-    ListAdapter<Offer, OffersAdapter.OfferViewHolder>(OfferDiffCallback()) {
+class OffersAdapter(
+    private var offers: List<Offer>,
+    private val onShopNowClicked: (Offer) -> Unit
+) : RecyclerView.Adapter<OffersAdapter.ViewHolder>() {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): OfferViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemOfferBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return OfferViewHolder(binding)
+        return ViewHolder(binding)
     }
 
-    override fun onBindViewHolder(holder: OfferViewHolder, position: Int) {
-        holder.bind(getItem(position), onOfferClicked)
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(offers[position], onShopNowClicked)
     }
 
-    class OfferViewHolder(private val binding: ItemOfferBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(offer: Offer, onOfferClicked: (Offer) -> Unit) {
+    override fun getItemCount() = offers.size
+
+    class ViewHolder(private val binding: ItemOfferBinding) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(offer: Offer, onShopNowClicked: (Offer) -> Unit) {
             binding.offerTitle.text = offer.title
-            binding.offerTitle.background = null
-
             binding.offerDescription.text = offer.description
-            binding.offerDescription.background = null
-
-            binding.offerCode.text = offer.code
-
-            binding.textOfferValidUntil.text = "Valid until: ${offer.validUntil}"
-            binding.textOfferValidUntil.background = null
-
-            binding.root.setOnClickListener { onOfferClicked(offer) }
-        }
-    }
-
-    class OfferDiffCallback : DiffUtil.ItemCallback<Offer>() {
-        override fun areItemsTheSame(oldItem: Offer, newItem: Offer): Boolean {
-            return oldItem.id == newItem.id
-        }
-
-        override fun areContentsTheSame(oldItem: Offer, newItem: Offer): Boolean {
-            return oldItem == newItem
+            binding.btnShopNow.setOnClickListener { onShopNowClicked(offer) }
         }
     }
 }

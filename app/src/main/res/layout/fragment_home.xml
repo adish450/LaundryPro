@@ -11,47 +11,19 @@
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurface">
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:title="Dhobi Kart" >
-
-            <FrameLayout
-                android:id="@+id/cart_icon_container"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_gravity="end"
-                android:layout_marginEnd="16dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_shopping_cart"
-                    android:contentDescription="Shopping Cart"/>
-
-                <TextView
-                    android:id="@+id/cart_badge"
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_gravity="top|end"
-                    android:layout_marginEnd="4dp"
-                    android:layout_marginTop="4dp"
-                    android:background="@drawable/bg_cart_badge"
-                    android:gravity="center"
-                    android:textColor="@color/white"
-                    android:textSize="10sp"
-                    android:visibility="gone"
-                    tools:text="3"
-                    tools:visibility="visible" />
-            </FrameLayout>
-
+            app:menu="@menu/home_toolbar_menu">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Laundry Day"
+                android:layout_gravity="center"
+                android:textAppearance="@style/TextAppearance.Material3.TitleLarge"/>
         </com.google.android.material.appbar.MaterialToolbar>
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -64,79 +36,111 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp">
+            android:paddingBottom="16dp">
 
+            <!-- Header Image -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="200dp">
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/laundry_basket_placeholder"
+                    android:scaleType="centerCrop"
+                    android:contentDescription="Laundry basket"/>
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_header_gradient"/>
+                <TextView
+                    android:id="@+id/text_welcome"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|start"
+                    android:layout_margin="16dp"
+                    android:text="Welcome!"
+                    android:textColor="@android:color/white"
+                    android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
+                    tools:text="Welcome back, Alex!"/>
+            </FrameLayout>
+
+            <!-- Special Offer Card -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recycler_offers"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:clipToPadding="false"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                    tools:listitem="@layout/item_offer"/>
+
+            <!-- Upcoming Section -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Special Offers"
-                android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
-                android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp"
-                android:layout_marginBottom="8dp"/>
-
-            <com.facebook.shimmer.ShimmerFrameLayout
-                android:id="@+id/shimmer_offers"
+                android:text="Upcoming"
+                android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+                android:layout_marginStart="16dp"/>
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/upcoming_order_card"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                app:cardCornerRadius="12dp">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-                    <include layout="@layout/item_offer_placeholder" />
-                    <include layout="@layout/item_offer_placeholder" />
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:gravity="center_vertical">
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/ic_pickup_truck"
+                        android:background="@drawable/bg_icon_circle"
+                        android:padding="8dp"/>
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginStart="16dp">
+                        <TextView
+                            android:id="@+id/upcoming_order_title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                            tools:text="Pickup Scheduled"/>
+                        <TextView
+                            android:id="@+id/upcoming_order_subtitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            tools:text="Tomorrow, 2 PM - 4 PM"/>
+                    </LinearLayout>
                 </LinearLayout>
-            </com.facebook.shimmer.ShimmerFrameLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recycler_offers"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:clipToPadding="false"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
-                android:visibility="gone"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                tools:listitem="@layout/item_offer"
-                tools:itemCount="3"/>
-
+            <!-- Service Recommendations Section -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Our Services"
-                android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp"
-                android:layout_marginBottom="8dp"
-                android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall" />
-
-            <com.facebook.shimmer.ShimmerFrameLayout
-                android:id="@+id/shimmer_services"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-                <GridLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:columnCount="2">
-                    <include layout="@layout/item_service_placeholder" />
-                    <include layout="@layout/item_service_placeholder" />
-                    <include layout="@layout/item_service_placeholder" />
-                    <include layout="@layout/item_service_placeholder" />
-                </GridLayout>
-            </com.facebook.shimmer.ShimmerFrameLayout>
+                android:text="Service Recommendations"
+                android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+                android:layout_marginStart="16dp"/>
 
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recycler_services"
+                android:id="@+id/recycler_recommendations"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"
-                android:visibility="gone"
-                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-                app:spanCount="2"
-                tools:listitem="@layout/item_service"
-                tools:itemCount="4"/>
+                android:layout_marginTop="8dp"
+                android:clipToPadding="false"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/item_service_recommendation"/>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
     private fun observeNavigation() {
         viewModel.navigateToHome.observe(this) { navigate ->
             if (navigate == true) {
-                binding.bottomNavigation.selectedItemId = R.id.nav_home
+                binding.bottomNavigation.selectedItemId = R.id.navigation_home
                 viewModel.onHomeNavigationComplete()
             }
         }
@@ -44,18 +44,18 @@ class MainActivity : AppCompatActivity() {
     private fun setupBottomNavigation() {
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.nav_home -> {
+                R.id.navigation_home -> {
                     loadFragment(HomeFragment())
                     true
                 }
-                R.id.nav_cart -> {
-                    loadFragment(CartFragment())
+                R.id.navigation_services -> {
+                    loadFragment(ServicesFragment())
                     true
                 }
-                R.id.nav_orders, R.id.nav_profile -> {
+                R.id.navigation_orders, R.id.navigation_profile -> {
                     if (viewModel.currentUser.value != null) {
                         // User is logged in, navigate to the selected fragment
-                        val fragment = if (item.itemId == R.id.nav_orders) OrdersFragment() else ProfileFragment()
+                        val fragment = if (item.itemId == R.id.navigation_orders) OrdersFragment() else ProfileFragment()
                         loadFragment(fragment)
                         true
                     } else {

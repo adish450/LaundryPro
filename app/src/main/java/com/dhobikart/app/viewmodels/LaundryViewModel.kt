@@ -80,10 +80,10 @@ class LaundryViewModel : ViewModel() {
     fun loadServices() {
         viewModelScope.launch {
             try {
-                Log.d(TAG, "Fetching services from server...")
+                Log.v(TAG, "Fetching services from server...")
                 val servicesResult = repository.getServices()
                 _services.postValue(servicesResult)
-                Log.d(TAG, "Successfully fetched ${servicesResult.size} services.")
+                Log.v(TAG, "Successfully fetched ${servicesResult.size} services.")
             } catch (e: Exception) {
                 Log.e(TAG, "Error fetching services: ${e.message}", e)
             }

@@ -291,7 +291,7 @@ class LaundryViewModel : ViewModel() {
         appliedOffer.value = null
     }
 
-    fun loadUserOrders() {
+    private fun loadUserOrders() {
         val userId = currentUser.value?.id ?: return
         viewModelScope.launch {
             try {

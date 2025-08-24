@@ -1,0 +1,19 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    <path
+        android:fillColor="#FFDDC9"
+        android:pathData="M60,60m-60,0a60,60 0,1 1,120 0a60,60 0,1 1,-120 0" />
+    <path
+        android:fillColor="#FFEFE3"
+        android:pathData="M60,60m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0" />
+    <!-- Simple bust silhouette -->
+    <path
+        android:fillColor="#FFC107"
+        android:pathData="M60,40 A15,15 0,1 1,60 70 A15,15 0,1 1,60 40" />
+    <path
+        android:fillColor="#FFC107"
+        android:pathData="M40,90 C40,70 80,70 80,90 L80,100 L40,100 Z"/>
+</vector>

@@ -65,7 +65,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 android:text="Account"
-                android:textAppearance="@style/TextAppearance.Material3.TitleLarge"/>
+                android:textStyle="bold"
+                android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"/>
 
             <RelativeLayout
                 android:id="@+id/btn_personal_info"
@@ -135,6 +136,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 android:text="Settings"
+                android:textStyle="bold"
                 android:textAppearance="@style/TextAppearance.Material3.TitleLarge"/>
 
             <RelativeLayout

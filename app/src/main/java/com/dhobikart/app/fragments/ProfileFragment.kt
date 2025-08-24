@@ -62,7 +62,10 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 .commit()
         }
         binding.btnPaymentMethods.setOnClickListener {
-            // TODO: Navigate to a new PaymentMethodsFragment
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, PaymentMethodsFragment())
+                .addToBackStack(null)
+                .commit()
         }
         binding.btnOrderHistory.setOnClickListener {
             parentFragmentManager.beginTransaction()

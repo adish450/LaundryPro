@@ -24,8 +24,8 @@ class LaundryViewModel : ViewModel() {
 
     val error = MutableLiveData<String?>()
 
-    private val _services = MutableLiveData<List<LaundryService>>()
-    val services: LiveData<List<LaundryService>> = _services
+    private val _services = MutableLiveData<List<Service>>()
+    val services: LiveData<List<Service>> = _services
 
     private val _orders = MutableLiveData<List<Order>>()
     val orders: LiveData<List<Order>> = _orders

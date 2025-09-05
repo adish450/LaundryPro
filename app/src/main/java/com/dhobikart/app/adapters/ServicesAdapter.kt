@@ -7,11 +7,10 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.dhobikart.app.R
 import com.dhobikart.app.databinding.ItemServiceBinding
-import com.dhobikart.app.models.LaundryService
 import com.dhobikart.app.models.Service
 
-class ServicesAdapter(private val onServiceClicked: (LaundryService) -> Unit) :
-    ListAdapter<LaundryService, ServicesAdapter.ServiceViewHolder>(ServiceDiffCallback()) {
+class ServicesAdapter(private val onServiceClicked: (Service) -> Unit) :
+    ListAdapter<Service, ServicesAdapter.ServiceViewHolder>(ServiceDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ServiceViewHolder {
         val binding = ItemServiceBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -23,7 +22,7 @@ class ServicesAdapter(private val onServiceClicked: (LaundryService) -> Unit) :
     }
 
     class ServiceViewHolder(private val binding: ItemServiceBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(service: LaundryService, onServiceClicked: (LaundryService) -> Unit) {
+        fun bind(service: Service, onServiceClicked: (Service) -> Unit) {
             binding.serviceName.text = service.name
             binding.serviceDescription.text = service.description
 
@@ -38,11 +37,11 @@ class ServicesAdapter(private val onServiceClicked: (LaundryService) -> Unit) :
         }
     }
 
-    class ServiceDiffCallback : DiffUtil.ItemCallback<LaundryService>() {
-        override fun areItemsTheSame(oldItem: LaundryService, newItem: LaundryService): Boolean {
+    class ServiceDiffCallback : DiffUtil.ItemCallback<Service>() {
+        override fun areItemsTheSame(oldItem: Service, newItem: Service): Boolean {
             return oldItem.id == newItem.id
         }
-        override fun areContentsTheSame(oldItem: LaundryService, newItem: LaundryService): Boolean {
+        override fun areContentsTheSame(oldItem: Service, newItem: Service): Boolean {
             return oldItem == newItem
         }
     }

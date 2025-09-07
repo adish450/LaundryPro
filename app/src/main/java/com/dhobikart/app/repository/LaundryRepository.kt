@@ -90,13 +90,16 @@ class LaundryRepository {
         }
     }
 
-    suspend fun getServiceWithClothes(serviceId: String): List<ServiceCloth> {
-        val response = apiService.getServiceWithClothes(serviceId)
-        if (response.isSuccessful) {
-            // Extract the list of clothes from the wrapper object
-            return response.body()?.clothes ?: emptyList()
-        } else {
-            throw Exception("Failed to fetch clothes for service $serviceId")
+    suspend fun getServiceWithClothes(serviceId: String): Result<List<ServiceCloth>> {
+        return try {
+            val response = apiService.getServiceWithClothes(serviceId)
+            if (response.isSuccessful) {
+                Result.success(response.body()?.clothes ?: emptyList())
+            } else {
+                Result.failure(Exception("Failed to fetch service with clothes"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 

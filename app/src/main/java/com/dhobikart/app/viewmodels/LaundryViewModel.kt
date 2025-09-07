@@ -40,7 +40,7 @@ class LaundryViewModel : ViewModel() {
     private val _addressListUpdated = MutableLiveData<Event<User>>()
     val addressListUpdated: LiveData<Event<User>> = _addressListUpdated
 
-    val cartItems = CartManager.cartItems
+    val cartItems: LiveData<MutableList<CartItem>> = CartManager.cartItems
     val appliedOffer = CartManager.appliedOffer
 
     val navigateToHome = MutableLiveData<Boolean>()
@@ -51,8 +51,8 @@ class LaundryViewModel : ViewModel() {
     private val _pricedClothItems = MutableLiveData<List<PricedClothItem>>()
     val pricedClothItems: LiveData<List<PricedClothItem>> = _pricedClothItems
 
-    private val _serviceCloths = MutableLiveData<List<ServiceCloth>>()
-    val serviceCloths: LiveData<List<ServiceCloth>> = _serviceCloths
+    private val _serviceClothes = MutableLiveData<List<ServiceCloth>>()
+    val serviceClothes: LiveData<List<ServiceCloth>> = _serviceClothes
 
     val groupedCartItems = MediatorLiveData<List<GroupedCartItems>>()
 
@@ -74,7 +74,7 @@ class LaundryViewModel : ViewModel() {
 
         val grouped = items.groupBy { it.serviceId }
             .map { (serviceId, cartItemsForService) ->
-                val serviceName = allServices.find { it.id.toString() == serviceId }?.name ?: "Unknown Service"
+                val serviceName = allServices.find { it.id == serviceId }?.name ?: "Unknown Service"
                 GroupedCartItems(serviceName, cartItemsForService)
             }
         groupedCartItems.value = grouped
@@ -99,15 +99,26 @@ class LaundryViewModel : ViewModel() {
         }
     }
 
-    fun loadItemsForService(serviceId: String) {
+    fun getClothesForService(serviceId: String) {
         viewModelScope.launch {
-            try {
-                _serviceCloths.postValue(repository.getServiceWithClothes(serviceId))
-            } catch (e: Exception) {
-                // Handle error
+            repository.getServiceWithClothes(serviceId).onSuccess {
+                _serviceClothes.value = it
+            }.onFailure {
+                // Handle error appropriately in a real app (e.g., show a toast)
             }
         }
     }
+
+    // Simple pass-through to the intelligent CartManager method
+    fun addItemToCart(item: ServiceCloth, serviceId: String) {
+        CartManager.addToCart(item, serviceId)
+    }
+
+    // Simple pass-through for removing/decrementing
+    fun removeItemFromCart(item: ServiceCloth, serviceId: String) {
+        CartManager.removeFromCart(item.clothId, serviceId)
+    }
+
 
     fun checkUserSession() {
         val savedUser = SessionManager.getUser()
@@ -182,6 +193,7 @@ class LaundryViewModel : ViewModel() {
     fun updateCartItemQuantity(itemId: String, serviceId: String, quantity: Int) {
         CartManager.updateCartItemQuantity(itemId, serviceId, quantity)
     }
+
 
     fun applyOffer(offerCode: String): Boolean {
         val offer = offers.value?.find { it.code == offerCode }
@@ -286,10 +298,10 @@ class LaundryViewModel : ViewModel() {
         _updateProfileResult.value = UpdateProfileResult.Idle
     }
 
-    private fun clearCart() {
+    /*private fun clearCart() {
         cartItems.value = mutableListOf()
         appliedOffer.value = null
-    }
+    }*/
 
     private fun loadUserOrders() {
         val userId = currentUser.value?.id ?: return

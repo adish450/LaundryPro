@@ -1,95 +1,96 @@
 package com.dhobikart.app.fragments
 
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.dhobikart.app.R
 import com.dhobikart.app.adapters.ItemsAdapter
 import com.dhobikart.app.databinding.FragmentItemsBinding
+import com.dhobikart.app.models.CartItem
 import com.dhobikart.app.viewmodels.LaundryViewModel
+import java.text.NumberFormat
+import java.util.Locale
 
-class ItemsFragment : Fragment() {
+class ItemsFragment : Fragment(R.layout.fragment_items) {
+
     private var _binding: FragmentItemsBinding? = null
     private val binding get() = _binding!!
     private val viewModel: LaundryViewModel by activityViewModels()
     private lateinit var itemsAdapter: ItemsAdapter
-    private var serviceId: String = ""
-    private var serviceName: String = "Service Items" // Default title
 
-    companion object {
-        private const val ARG_SERVICE_ID = "service_id"
-        private const val ARG_SERVICE_NAME = "service_name"
-
-        // Updated newInstance to accept the service name
-        fun newInstance(serviceId: String, serviceName: String): ItemsFragment {
-            return ItemsFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_SERVICE_ID, serviceId)
-                    putString(ARG_SERVICE_NAME, serviceName)
-                }
-            }
-        }
-    }
+    private var serviceId: String? = null
+    private var serviceName: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
-            serviceId = it.getString(ARG_SERVICE_ID, "")
-            // Retrieve the service name from the arguments
-            serviceName = it.getString(ARG_SERVICE_NAME, "Service Items")
+            serviceId = it.getString(ARG_SERVICE_ID)
+            serviceName = it.getString(ARG_SERVICE_NAME)
         }
-    }
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        _binding = FragmentItemsBinding.inflate(inflater, container, false)
-        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        _binding = FragmentItemsBinding.bind(view)
 
-        binding.toolbarTitle.text = serviceName
-
-        setupRecyclerView()
+        setupToolbar()
+        setupRecyclerView(emptyMap())
         observeViewModel()
-        if (serviceId.isNotEmpty()) {
-            viewModel.loadItemsForService(serviceId)
-        }
+
         binding.btnViewCart.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, CartFragment())
                 .addToBackStack(null)
                 .commit()
         }
+
+        serviceId?.let { viewModel.getClothesForService(it) }
     }
 
-    private fun setupRecyclerView() {
-        itemsAdapter = ItemsAdapter { serviceCloth ->
-            viewModel.addToCart(serviceCloth, serviceId)
-            //Toast.makeText(context, "${serviceCloth.name} added to cart", Toast.LENGTH_SHORT).show()
+    private fun setupToolbar() {
+        binding.toolbar.title = serviceName
+        binding.toolbar.setNavigationOnClickListener {
+            parentFragmentManager.popBackStack()
         }
-        binding.recyclerItems.layoutManager = LinearLayoutManager(context)
-        binding.recyclerItems.adapter = itemsAdapter
+    }
 
+    private fun setupRecyclerView(cartMap: Map<String, CartItem>) {
+        itemsAdapter = ItemsAdapter(
+            cartMap,
+            onAddItem = { item ->
+                serviceId?.let { sid -> viewModel.addItemToCart(item, sid) }
+            },
+            onRemoveItem = { item ->
+                serviceId?.let { sid -> viewModel.removeItemFromCart(item, sid) }
+            }
+        )
+        binding.recyclerItems.adapter = itemsAdapter
     }
 
     private fun observeViewModel() {
-        viewModel.serviceCloths.observe(viewLifecycleOwner) { items ->
-            itemsAdapter.submitList(items)
+        viewModel.serviceClothes.observe(viewLifecycleOwner) { clothes ->
+            itemsAdapter.submitList(clothes)
         }
 
-        viewModel.cartItems.observe(viewLifecycleOwner) { cartItems ->
-            val itemCount = cartItems?.sumOf { it.quantity } ?: 0
-            if (itemCount > 0) {
-                binding.btnViewCart.text = "View Cart ($itemCount items)"
-                binding.btnViewCart.visibility = View.VISIBLE
-            } else {
+        viewModel.cartItems.observe(viewLifecycleOwner) { cartList ->
+            // Filter the global cart to only include items for the current service.
+            val serviceSpecificCart = cartList.filter { it.serviceId == serviceId }
+            val cartMap = serviceSpecificCart.associateBy { it.itemId }
+
+            setupRecyclerView(cartMap)
+            itemsAdapter.submitList(viewModel.serviceClothes.value)
+
+            // The "View Cart" button should still reflect the total for all services.
+            if (cartList.isEmpty()) {
                 binding.btnViewCart.visibility = View.GONE
+            } else {
+                val totalItemCount = cartList.sumOf { it.quantity }
+                val totalPrice = cartList.sumOf { (it.price) * it.quantity }
+                val format = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+
+                binding.btnViewCart.visibility = View.VISIBLE
+                binding.btnViewCart.text = "View Cart ($totalItemCount items) - ${format.format(totalPrice)}"
             }
         }
     }
@@ -97,5 +98,19 @@ class ItemsFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    companion object {
+        private const val ARG_SERVICE_ID = "service_id"
+        private const val ARG_SERVICE_NAME = "service_name"
+
+        @JvmStatic
+        fun newInstance(serviceId: String, serviceName: String) =
+            ItemsFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_SERVICE_ID, serviceId)
+                    putString(ARG_SERVICE_NAME, serviceName)
+                }
+            }
     }
 }

@@ -2,6 +2,7 @@ package com.dhobikart.app.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -17,7 +18,9 @@ object CartManager {
     private lateinit var prefs: SharedPreferences
     private val gson = Gson()
 
-    val cartItems = MutableLiveData<MutableList<CartItem>>()
+    private val _cartItems = MutableLiveData<MutableList<CartItem>>(mutableListOf())
+    val cartItems: LiveData<MutableList<CartItem>> = _cartItems
+
     val appliedOffer = MutableLiveData<Offer?>()
 
     fun init(context: Context) {
@@ -34,74 +37,70 @@ object CartManager {
 
     private fun loadCart() {
         val cartJson = prefs.getString(CART_ITEMS_KEY, null)
-        if (cartJson != null) {
+        val items: MutableList<CartItem> = if (cartJson != null) {
             val type = object : TypeToken<MutableList<CartItem>>() {}.type
             try {
-                val items: MutableList<CartItem> = gson.fromJson(cartJson, type)
-                cartItems.value = items
+                gson.fromJson(cartJson, type) ?: mutableListOf()
             } catch (e: Exception) {
-                cartItems.value = mutableListOf()
+                mutableListOf()
             }
         } else {
-            cartItems.value = mutableListOf()
+            mutableListOf()
         }
+        _cartItems.postValue(items) // Use postValue to update the LiveData
     }
 
-    fun addToCart(serviceCloth: ServiceCloth, serviceId: String) {
-        val currentList = cartItems.value ?: mutableListOf()
-        val existingItem = currentList.find { it.itemId == serviceCloth.clothId && it.serviceId == serviceId }
+    // This is now the primary method for adding or incrementing.
+    fun addToCart(item: ServiceCloth, serviceId: String) {
+        val cart = _cartItems.value ?: mutableListOf()
+        // Find an item with BOTH a matching item ID AND service ID
+        val existingItem = cart.find { it.itemId == item.clothId && it.serviceId == serviceId }
 
-        val newList = if (existingItem != null) {
-            currentList.map { cartItem ->
-                if (cartItem.itemId == existingItem.itemId && cartItem.serviceId == existingItem.serviceId) {
-                    cartItem.copy(quantity = cartItem.quantity + 1)
-                } else {
-                    cartItem
-                }
-            }
+        if (existingItem != null) {
+            // If it exists for this service, just increment the quantity
+            existingItem.quantity++
         } else {
-            currentList + CartItem(
-                itemId = serviceCloth.clothId,
-                name = serviceCloth.name,
-                price = serviceCloth.price,
-                quantity = 1,
-                serviceId = serviceId
-            )
+            // If it's a new item for this service, add it to the list
+            cart.add(CartItem(itemId = item.clothId, name = item.name, price = item.price, quantity = 1, serviceId = serviceId))
         }
-
-        cartItems.postValue(newList.toMutableList())
-        saveCart()
+        _cartItems.value = cart
     }
 
+    // This method is now only for decrementing or removing.
     fun removeFromCart(itemId: String, serviceId: String) {
-        val currentList = cartItems.value ?: return
-        val newList = currentList.filterNot { it.itemId == itemId && it.serviceId == serviceId }
-        cartItems.postValue(newList.toMutableList())
-        saveCart()
-    }
+        val cart = _cartItems.value ?: return
+        val existingItem = cart.find { it.itemId == itemId && it.serviceId == serviceId }
 
-    fun updateCartItemQuantity(itemId: String, serviceId: String, quantity: Int) {
-        val currentList = cartItems.value ?: return
-
-        val newList = if (quantity <= 0) {
-            currentList.filterNot { it.itemId == itemId && it.serviceId == serviceId }
-        } else {
-            currentList.map { cartItem ->
-                if (cartItem.itemId == itemId && cartItem.serviceId == serviceId) {
-                    cartItem.copy(quantity = quantity)
-                } else {
-                    cartItem
-                }
+        if (existingItem != null) {
+            if (existingItem.quantity > 1) {
+                existingItem.quantity--
+            } else {
+                cart.remove(existingItem)
             }
         }
-        cartItems.postValue(newList.toMutableList())
-        saveCart()
+        _cartItems.value = cart
+    }
+
+    fun updateCartItemQuantity(itemId: String, serviceId: String, newQuantity: Int) {
+        val cart = _cartItems.value ?: return
+        val itemToUpdate = cart.find { it.itemId == itemId && it.serviceId == serviceId }
+
+        if (itemToUpdate != null) {
+            if (newQuantity > 0) {
+                itemToUpdate.quantity = newQuantity
+            } else {
+                cart.remove(itemToUpdate)
+            }
+        }
+        _cartItems.value = cart
+    }
+
+    fun getCartItemQuantity(itemId: String): Int {
+        return cartItems.value?.find { it.itemId == itemId }?.quantity ?: 0
     }
 
     fun clearCart() {
-        cartItems.postValue(mutableListOf())
-        appliedOffer.postValue(null)
-        saveCart()
+        _cartItems.value = mutableListOf()
     }
 
     fun applyOffer(offer: Offer) {

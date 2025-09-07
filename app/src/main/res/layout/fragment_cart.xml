@@ -1,139 +1,211 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurfaceContainerLowest"
-    android:clickable="true"
-    android:focusable="true">
+    android:background="?attr/colorSurface"
+    tools:context=".fragments.CartFragment">
 
     <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/app_bar_layout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="?attr/colorSurface">
+        android:layout_height="wrap_content">
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:title="My Cart" />
+            app:navigationIcon="@drawable/ic_arrow_back"
+            app:title="Cart"
+            app:titleCentered="true" />
     </com.google.android.material.appbar.AppBarLayout>
 
-    <FrameLayout
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_cart"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:paddingBottom="250dp"
-            tools:listitem="@layout/item_grouped_cart" />
-
-        <LinearLayout
-            android:id="@+id/empty_cart_layout"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:visibility="gone"
-            tools:visibility="visible">
-
-            <ImageView
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:src="@drawable/ic_cart_empty"
-                android:alpha="0.6"
-                app:tint="?attr/colorOnSurfaceVariant"
-                android:contentDescription="Empty Cart Icon"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Your Cart is Empty"
-                android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"/>
-        </LinearLayout>
-
-    </FrameLayout>
-
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cart_content_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        app:shapeAppearanceOverlay="@style/ShapeAppearance.App.Corner.Top">
-
+        android:layout_below="@id/app_bar_layout"
+        android:layout_above="@+id/btn_select_address">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Apply Offer Section -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_cart_items"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                android:nestedScrollingEnabled="false"
+                tools:listitem="@layout/item_cart_details"
+                tools:itemCount="3"/>
+
+            <!--<View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@drawable/divider"
+                android:layout_marginTop="16dp"/>-->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Promo Code"
+                android:textAppearance="?attr/textAppearanceTitleMedium" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="16dp">
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+                <EditText
+                    android:id="@+id/et_promo_code"
                     android:layout_width="0dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:hint="Enter Offer Code">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/et_offer_code"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"/>
-                </com.google.android.material.textfield.TextInputLayout>
+                    android:background="@drawable/bg_promo_code_input"
+                    android:hint="Enter promo code"
+                    android:inputType="text"
+                    android:padding="16dp" />
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_apply_offer"
+                    android:id="@+id/btn_apply_promo"
+                    style="@style/Widget.App.Button.Secondary"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:layout_marginStart="8dp"
-                    android:layout_gravity="center_vertical"
                     android:text="Apply"/>
             </LinearLayout>
 
-            <!-- Price Summary Section -->
-            <RelativeLayout
+            <View
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-                <TextView android:text="Subtotal" android:textAppearance="@style/TextAppearance.Material3.BodyLarge" android:layout_alignParentStart="true" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                <TextView android:id="@+id/text_subtotal" tools:text="₹20.50" android:textAppearance="@style/TextAppearance.Material3.BodyLarge" android:layout_alignParentEnd="true" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            </RelativeLayout>
+                android:layout_height="1dp"
+                android:background="@drawable/divider"
+                android:layout_marginTop="16dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Payment Summary"
+                android:textAppearance="?attr/textAppearanceTitleMedium" />
+
             <RelativeLayout
-                android:id="@+id/discount_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp">
-                <TextView android:text="Discount" android:textAppearance="@style/TextAppearance.Material3.BodyLarge" android:layout_alignParentStart="true" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                <TextView android:id="@+id/text_discount" tools:text="-₹2.05" android:textColor="?attr/colorPrimary" android:textAppearance="@style/TextAppearance.Material3.BodyLarge" android:layout_alignParentEnd="true" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                android:layout_marginTop="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Subtotal"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"/>
+                <TextView
+                    android:id="@+id/tv_subtotal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    tools:text="$45.00"/>
             </RelativeLayout>
-            <com.google.android.material.divider.MaterialDivider
+
+            <RelativeLayout
+                android:id="@+id/layout_discount"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:layout_marginBottom="8dp"/>
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-                <TextView android:text="Total" android:textStyle="bold" android:textAppearance="@style/TextAppearance.Material3.TitleMedium" android:layout_alignParentStart="true" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                <TextView android:id="@+id/text_total" tools:text="₹18.45" android:textStyle="bold" android:textAppearance="@style/TextAppearance.Material3.TitleMedium" android:layout_alignParentEnd="true" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <!-- This LinearLayout groups the label and the remove button on the left -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tv_discount_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="?attr/colorPrimary"
+                        android:textAppearance="?attr/textAppearanceBodyLarge"
+                        tools:text="Discount (CLEAN20)"/>
+
+                    <ImageButton
+                        android:id="@+id/btn_remove_promo"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/bg_circular_button"
+                        android:src="@drawable/ic_close"/>
+                </LinearLayout>
+
+                <!-- The discount amount is now separate and can be perfectly aligned -->
+                <TextView
+                    android:id="@+id/tv_discount_amount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:textColor="?attr/colorPrimary"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    tools:text="-$5.00"/>
+
             </RelativeLayout>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_checkout"
+            <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:padding="12dp"
-                android:text="Proceed to Checkout"/>
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+                android:layout_marginTop="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Delivery Charges"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"/>
+                <TextView
+                    android:id="@+id/tv_delivery_charges"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    tools:text="$5.00"/>
+            </RelativeLayout>
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@drawable/divider"
+                android:layout_marginTop="8dp"/>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Total"
+                    android:textStyle="bold"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"/>
+                <TextView
+                    android:id="@+id/tv_total"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:textStyle="bold"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    tools:text="$50.00"/>
+            </RelativeLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_select_address"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="16dp"
+        android:padding="12dp"
+        android:text="Schedule Pickup" />
+</RelativeLayout>

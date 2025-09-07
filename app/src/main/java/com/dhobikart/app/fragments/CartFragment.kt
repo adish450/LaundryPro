@@ -1,120 +1,167 @@
 package com.dhobikart.app.fragments
 
-import android.content.Intent
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.SimpleItemAnimator
-import com.dhobikart.app.AuthActivity
 import com.dhobikart.app.R
 import com.dhobikart.app.adapters.GroupedCartAdapter
 import com.dhobikart.app.databinding.FragmentCartBinding
+import com.dhobikart.app.models.CartDisplayItem
+import com.dhobikart.app.models.CartItem
+import com.dhobikart.app.models.Offer
 import com.dhobikart.app.viewmodels.LaundryViewModel
+import java.text.NumberFormat
+import java.util.Locale
 
-class CartFragment : Fragment() {
+class CartFragment : Fragment(R.layout.fragment_cart) {
+
     private var _binding: FragmentCartBinding? = null
     private val binding get() = _binding!!
-
     private val viewModel: LaundryViewModel by activityViewModels()
-    private lateinit var groupedCartAdapter: GroupedCartAdapter
-
-    private val authLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            viewModel.checkUserSession()
-            goToCheckout()
-        }
-    }
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        _binding = FragmentCartBinding.inflate(inflater, container, false)
-        return binding.root
-    }
+    private lateinit var cartAdapter: GroupedCartAdapter
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        _binding = FragmentCartBinding.bind(view)
 
+        setupToolbar()
         setupRecyclerView()
-        setupClickListeners()
         observeViewModel()
+
+        binding.btnApplyPromo.setOnClickListener {
+            val code = binding.etPromoCode.text.toString().trim()
+            Toast.makeText(context, "Applying code...", Toast.LENGTH_SHORT).show()
+            viewModel.applyPromoCode(code)
+        }
+
+        binding.btnRemovePromo.setOnClickListener {
+            viewModel.removePromoCode()
+            binding.etPromoCode.text.clear()
+        }
+
+        binding.btnSelectAddress.setOnClickListener {
+            val cartList = viewModel.cartItems.value
+            val offer = viewModel.appliedOffer.value
+
+            val subtotal = cartList?.sumOf { it.price * it.quantity } ?: 0.0
+            val deliveryCharges = 0.00 // Example
+            var discount = 0.0
+            if (offer != null) {
+                val percentageDiscount = (subtotal * offer.discountPercentage) / 100.0
+                //val maxDiscount = offer.maxDiscount.toDoubleOrNull() ?: Double.MAX_VALUE
+                discount = percentageDiscount
+            }
+            val total = (subtotal + deliveryCharges - discount).coerceAtLeast(0.0)
+
+            //val checkoutFragment = CheckoutFragment.newInstance(subtotal, discount, total)
+
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, CheckoutFragment()) // Navigate to CheckoutFragment
+                .addToBackStack(null)
+                .commit()
+        }
+    }
+
+    private fun setupToolbar() {
+        binding.toolbar.setNavigationOnClickListener {
+            parentFragmentManager.popBackStack()
+        }
     }
 
     private fun setupRecyclerView() {
-        groupedCartAdapter = GroupedCartAdapter(
-            onQuantityChanged = { itemId, serviceId, newQuantity ->
-                viewModel.updateCartItemQuantity(itemId, serviceId, newQuantity)
+        cartAdapter = GroupedCartAdapter( // <-- Instantiate the renamed adapter
+            onUpdateQuantity = { cartItem, newQuantity ->
+                viewModel.updateCartItemQuantity(cartItem.itemId, cartItem.serviceId, newQuantity)
             },
-            onItemRemoved = { itemId, serviceId ->
-                viewModel.removeFromCart(itemId, serviceId)
+            onDeleteItem = { cartItem ->
+                viewModel.deleteItemFromCart(cartItem.itemId, cartItem.serviceId)
             }
         )
-        binding.recyclerCart.adapter = groupedCartAdapter
-        binding.recyclerCart.layoutManager = LinearLayoutManager(context)
-
-        // **This is the definitive fix:** It disables the default "change" animation
-        // that causes the RecyclerView to jitter when an item's content is updated.
-        (binding.recyclerCart.itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
+        binding.recyclerCartItems.adapter = cartAdapter
     }
 
-    private fun setupClickListeners() {
-        binding.btnApplyOffer.setOnClickListener {
-            val offerCode = binding.etOfferCode.text.toString().trim()
-            if (offerCode.isNotEmpty()) {
-                if (viewModel.applyOffer(offerCode)) {
-                    Toast.makeText(context, "Offer applied successfully!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(context, "Invalid offer code", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-
-        binding.btnCheckout.setOnClickListener {
-            if (viewModel.currentUser.value != null) {
-                goToCheckout()
-            } else {
-                val intent = Intent(activity, AuthActivity::class.java)
-                authLauncher.launch(intent)
-            }
-        }
-    }
-
-    private fun goToCheckout() {
-        parentFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, CheckoutFragment())
-            .addToBackStack(null)
-            .commit()
-    }
 
     private fun observeViewModel() {
-        viewModel.groupedCartItems.observe(viewLifecycleOwner) { groupedItems ->
-            groupedCartAdapter.submitList(groupedItems)
-
-            val isEmpty = groupedItems.isNullOrEmpty()
-            binding.emptyCartLayout.visibility = if (isEmpty) View.VISIBLE else View.GONE
-            binding.cartContentLayout.visibility = if (isEmpty) View.GONE else View.VISIBLE
-
-            updatePricing()
+        // Observer 1: Watches for changes to the list of items in the cart
+        viewModel.cartItems.observe(viewLifecycleOwner) { cartList ->
+            // When the cart changes, we need to rebuild the display list
+            updateAdapterWithCartData(cartList)
+            // And recalculate the payment summary, using the current value of the applied offer
+            updatePaymentSummary(cartList, viewModel.appliedOffer.value)
         }
 
-        viewModel.appliedOffer.observe(viewLifecycleOwner) {
-            updatePricing()
+        // Observer 2: Watches for changes to the applied promo code
+        viewModel.appliedOffer.observe(viewLifecycleOwner) { offer ->
+            // When the offer changes, we only need to recalculate the summary
+            // using the current value of the cart items
+            updatePaymentSummary(viewModel.cartItems.value, offer)
+        }
+
+        // Observer 3: Watches for status messages (like "Invalid code")
+        viewModel.promoStatus.observe(viewLifecycleOwner) { event ->
+            event.getContentIfNotHandled()?.let { message ->
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
-    private fun updatePricing() {
-        val summary = viewModel.calculateTotal()
-        binding.textSubtotal.text = "₹${String.format("%.2f", summary.subtotal)}"
-        binding.textDiscount.text = "-₹${String.format("%.2f", summary.discount)}"
-        binding.textTotal.text = "₹${String.format("%.2f", summary.total)}"
-        binding.btnCheckout.text = "Proceed to Checkout - ₹${String.format("%.2f", summary.total)}"
+    // This new helper function contains the logic to build the adapter's list
+    private fun updateAdapterWithCartData(cartList: List<CartItem>?) {
+        val services = viewModel.services.value
+        if (cartList.isNullOrEmpty() || services.isNullOrEmpty()) {
+            binding.recyclerCartItems.visibility = View.GONE
+            return
+        }
 
-        binding.discountLayout.visibility = if (summary.discount > 0) View.VISIBLE else View.GONE
+        binding.recyclerCartItems.visibility = View.VISIBLE
+
+        val serviceNameMap = services.associateBy({ it.id }, { it.name })
+        val groupedById = cartList.groupBy { it.serviceId }
+
+        val displayList = mutableListOf<CartDisplayItem>()
+        groupedById.forEach { (serviceId, items) ->
+            val serviceName = serviceNameMap[serviceId] ?: "Other Items"
+            displayList.add(CartDisplayItem.Header(serviceName))
+            items.forEach { cartItem ->
+                displayList.add(CartDisplayItem.Item(cartItem))
+            }
+            val groupSubtotal = items.sumOf { it.price * it.quantity }
+            displayList.add(CartDisplayItem.Footer(groupSubtotal))
+        }
+        cartAdapter.submitList(displayList)
     }
+
+    private fun updatePaymentSummary(cartList: List<CartItem>?, offer: Offer?) {
+        val subtotal = cartList?.sumOf { it.price * it.quantity } ?: 0.0
+        val deliveryCharges =0.00 // Example
+
+        var discount = 0.0
+        if (offer != null) {
+            // Calculate discount... (logic is unchanged)
+            val percentageDiscount = (subtotal * offer.discountPercentage) / 100.0
+            //val maxDiscount = offer.maxDiscount.toDoubleOrNull() ?: Double.MAX_VALUE
+            discount = percentageDiscount
+
+            // --- CORRECTED UI BINDING ---
+            binding.layoutDiscount.visibility = View.VISIBLE
+            binding.tvDiscountLabel.text = "Discount (${offer.code})" // Set the label with the code
+            binding.tvDiscountAmount.text = "-${NumberFormat.getCurrencyInstance(Locale("en", "IN")).format(discount)}" // Set the amount
+
+        } else {
+            binding.layoutDiscount.visibility = View.GONE
+        }
+
+        val total = (subtotal + deliveryCharges - discount).coerceAtLeast(0.0)
+
+        val format = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+
+        binding.tvSubtotal.text = format.format(subtotal)
+        binding.tvDeliveryCharges.text = format.format(deliveryCharges)
+        binding.tvTotal.text = format.format(total)
+    }
+
 
     override fun onDestroyView() {
         super.onDestroyView()

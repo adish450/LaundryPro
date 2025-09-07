@@ -41,7 +41,7 @@ class LaundryViewModel : ViewModel() {
     val addressListUpdated: LiveData<Event<User>> = _addressListUpdated
 
     val cartItems: LiveData<MutableList<CartItem>> = CartManager.cartItems
-    val appliedOffer = CartManager.appliedOffer
+    //val appliedOffer = CartManager.appliedOffer
 
     val navigateToHome = MutableLiveData<Boolean>()
 
@@ -55,6 +55,14 @@ class LaundryViewModel : ViewModel() {
     val serviceClothes: LiveData<List<ServiceCloth>> = _serviceClothes
 
     val groupedCartItems = MediatorLiveData<List<GroupedCartItems>>()
+
+    // LiveData to hold the currently applied offer
+    private val _appliedOffer = MutableLiveData<Offer?>(null)
+    val appliedOffer: LiveData<Offer?> = _appliedOffer
+
+    // LiveData for showing success/error messages
+    private val _promoStatus = MutableLiveData<Event<String>>()
+    val promoStatus: LiveData<Event<String>> = _promoStatus
 
     init {
         loadServices()
@@ -119,6 +127,43 @@ class LaundryViewModel : ViewModel() {
         CartManager.removeFromCart(item.clothId, serviceId)
     }
 
+    fun deleteItemFromCart(itemId: String, serviceId: String) {
+        CartManager.deleteItemFromCart(itemId, serviceId)
+    }
+
+    fun applyPromoCode(code: String) {
+        if (code.isBlank()) {
+            _promoStatus.value = Event("Please enter a promo code.")
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                // Call the suspend function directly inside a try block
+                val availableOffers = repository.getOffers()
+
+                // Find the offer that matches the entered code
+                val foundOffer = availableOffers.find { it.code.equals(code, ignoreCase = true) }
+
+                if (foundOffer != null) {
+                    _appliedOffer.value = foundOffer
+                    _promoStatus.value = Event("Promo code applied successfully!")
+                } else {
+                    _appliedOffer.value = null // Clear any previous offer
+                    _promoStatus.value = Event("Invalid or expired promo code.")
+                }
+            } catch (e: Exception) {
+                // Catch any exceptions (e.g., network errors) from the repository
+                _appliedOffer.value = null
+                _promoStatus.value = Event("Could not verify promo code: ${e.message}")
+            }
+        }
+    }
+
+    fun removePromoCode() {
+        _appliedOffer.value = null
+        _promoStatus.value = Event("Promo code removed.")
+    }
 
     fun checkUserSession() {
         val savedUser = SessionManager.getUser()

@@ -95,6 +95,16 @@ object CartManager {
         _cartItems.value = cart
     }
 
+    fun deleteItemFromCart(itemId: String, serviceId: String) {
+        val cart = _cartItems.value ?: return
+        val itemToRemove = cart.find { it.itemId == itemId && it.serviceId == serviceId }
+        if (itemToRemove != null) {
+            cart.remove(itemToRemove)
+        }
+        _cartItems.postValue(cart)
+        saveCart()
+    }
+
     fun getCartItemQuantity(itemId: String): Int {
         return cartItems.value?.find { it.itemId == itemId }?.quantity ?: 0
     }

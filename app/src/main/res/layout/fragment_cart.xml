@@ -29,7 +29,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="10dp">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recycler_cart_items"
@@ -39,12 +39,6 @@
                 android:nestedScrollingEnabled="false"
                 tools:listitem="@layout/item_cart_details"
                 tools:itemCount="3"/>
-
-            <!--<View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@drawable/divider"
-                android:layout_marginTop="16dp"/>-->
 
             <TextView
                 android:layout_width="wrap_content"

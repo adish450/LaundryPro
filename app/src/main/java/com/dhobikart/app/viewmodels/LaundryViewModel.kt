@@ -34,6 +34,10 @@ class LaundryViewModel : ViewModel() {
         orders.mapNotNull { it.pickupAddress }
             .distinct()
     }
+
+    private val _addresses = MutableLiveData<List<Address>>()
+    val addresses: LiveData<List<Address>> = _addresses
+
     private val _updateProfileResult = MutableLiveData<UpdateProfileResult>(UpdateProfileResult.Idle)
     val updateProfileResult: LiveData<UpdateProfileResult> = _updateProfileResult
 

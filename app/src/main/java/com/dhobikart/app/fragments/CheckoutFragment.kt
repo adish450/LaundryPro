@@ -1,78 +1,77 @@
 package com.dhobikart.app.fragments
 
-import android.Manifest
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
-import android.content.pm.PackageManager
-import android.location.Geocoder
+import android.content.Context
+import android.os.Build
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
-import android.view.ViewGroup
-import android.widget.ArrayAdapter
+import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.dhobikart.app.MainActivity
+import androidx.recyclerview.widget.LinearSnapHelper
+import androidx.recyclerview.widget.RecyclerView
 import com.dhobikart.app.R
-import com.dhobikart.app.adapters.CheckoutGroupedAdapter
-import com.dhobikart.app.adapters.SelectableAddressAdapter
+import com.dhobikart.app.adapters.CalendarAdapter
+import com.dhobikart.app.adapters.TimePickerAdapter
 import com.dhobikart.app.databinding.FragmentCheckoutBinding
-import com.dhobikart.app.models.Address
-import com.dhobikart.app.models.PlaceOrderResult
 import com.dhobikart.app.viewmodels.LaundryViewModel
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.*
+import java.text.NumberFormat
+import java.util.Date
+import java.util.Locale
+import java.util.Calendar
+import kotlin.math.abs
+import kotlin.math.pow
 
-class CheckoutFragment : Fragment() {
+class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
 
     private var _binding: FragmentCheckoutBinding? = null
     private val binding get() = _binding!!
     private val viewModel: LaundryViewModel by activityViewModels()
+    private lateinit var calendarAdapter: CalendarAdapter
+    private lateinit var timePickerAdapter: TimePickerAdapter
 
-    private lateinit var checkoutAdapter: CheckoutGroupedAdapter
-    private lateinit var addressAdapter: SelectableAddressAdapter
-    private var selectedPickupAddress: Address? = null
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private var selectedDate: Calendar = Calendar.getInstance()
-    private var selectedTime: Calendar = Calendar.getInstance()
+    // Properties to hold selected values
+    private var selectedDate: Date? = null
+    private var selectedHour: String = "09" // Default to start of service hours
+    private var selectedMinute: String = "00"
+    private var selectedTimeSlotView: View? = null
 
-    private val locationPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            getCurrentLocation()
-        } else {
-            Toast.makeText(requireContext(), "Location permission denied.", Toast.LENGTH_SHORT).show()
+    // Variables to track the last vibrated position for each picker
+    private var lastVibratedHourPos = -1
+    private var lastVibratedMinutePos = -1
+
+    // Properties for order summary
+    private var subtotal: Double = 0.0
+    private var discount: Double = 0.0
+    private var total: Double = 0.0
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        arguments?.let {
+            subtotal = it.getDouble(ARG_SUBTOTAL)
+            discount = it.getDouble(ARG_DISCOUNT)
+            total = it.getDouble(ARG_TOTAL)
         }
-    }
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        _binding = FragmentCheckoutBinding.inflate(inflater, container, false)
-        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
-        viewModel.onOrderPlacementHandled()
+        _binding = FragmentCheckoutBinding.bind(view)
 
         setupToolbar()
-        setupRecyclerViews()
-        setupClickListeners()
+        setupCalendar()
+        setupTimePickers()
+        populateOrderSummary()
         observeViewModel()
-        setupAddressDropdowns()
+        setupClickListeners()
+
+        // Fetch user data
+        // This assumes your ViewModel loads the user from SessionManager on init
     }
 
     private fun setupToolbar() {
@@ -81,243 +80,200 @@ class CheckoutFragment : Fragment() {
         }
     }
 
-    private fun setupRecyclerViews() {
-        checkoutAdapter = CheckoutGroupedAdapter()
-        binding.recyclerOrderItems.layoutManager = LinearLayoutManager(context)
-        binding.recyclerOrderItems.adapter = checkoutAdapter
-
-        addressAdapter = SelectableAddressAdapter { address ->
-            selectedPickupAddress = address
+    private fun setupCalendar() {
+        calendarAdapter = CalendarAdapter { date ->
+            // Update the selected date when the user taps a day in the calendar
+            selectedDate = date
+            //Toast.makeText(context, "Date selected: $date", Toast.LENGTH_SHORT).show()
         }
-        binding.recyclerSavedAddresses.layoutManager = LinearLayoutManager(context)
-        binding.recyclerSavedAddresses.adapter = addressAdapter
+        binding.recyclerCalendar.adapter = calendarAdapter
+        updateCalendarHeader() // Use helper to update header and button state
+
+        binding.btnPrevMonth.setOnClickListener {
+            if (!calendarAdapter.isAtCurrentMonth()) {
+                calendarAdapter.prevMonth()
+                updateCalendarHeader()
+            }
+        }
+
+        binding.btnNextMonth.setOnClickListener {
+            calendarAdapter.nextMonth()
+            updateCalendarHeader()
+        }
     }
 
-    private fun setupClickListeners() {
-        binding.btnAddNewAddress.setOnClickListener {
-            toggleNewAddressForm(true)
+    private fun setupTimePickers() {
+        val hours = (0..23).map { "%02d".format(it) }
+        setupPicker(binding.recyclerHourPicker, hours, 9, { selectedHour = it.toInt().toString() }) { lastVibratedHourPos = it }
+
+        val minutes = (0..59).map { "%02d".format(it) }
+        setupPicker(binding.recyclerMinutePicker, minutes, 0, { selectedMinute =
+            it.toInt().toString()
+        }) { lastVibratedMinutePos = it }
+    }
+
+    private fun setupPicker(recyclerView: RecyclerView,
+                            data: List<String>, defaultPosition: Int,
+                            onTimeSelected: (String) -> Unit,
+                            updateLastVibratedPos: (Int) -> Unit) {
+        val layoutManager = LinearLayoutManager(context)
+        recyclerView.layoutManager = layoutManager
+        recyclerView.adapter = TimePickerAdapter(data)
+
+        recyclerView.post {
+            val padding = recyclerView.height / 2 - (resources.getDimensionPixelSize(R.dimen.time_picker_item_height) / 2)
+            recyclerView.setPadding(0, padding, 0, padding)
+            layoutManager.scrollToPositionWithOffset(defaultPosition, 0)
         }
 
-        binding.btnCancelAddAddress.setOnClickListener {
-            toggleNewAddressForm(false)
-            clearAddressForm()
-        }
+        val snapHelper = LinearSnapHelper()
+        snapHelper.attachToRecyclerView(recyclerView)
 
-        binding.btnSaveAddress.setOnClickListener {
-            val street = binding.etStreet.text.toString().trim()
-            val city = binding.etCity.text.toString().trim()
-            val state = binding.etState.text.toString().trim()
-            val zip = binding.etZip.text.toString().trim()
+        // Add a listener to handle scroll conflict and haptics
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                updatePickerItemAppearance(recyclerView, layoutManager)
 
-            // **THE FIX:** Added validation for pincode and empty fields.
-            val pincodeRegex = Regex("^[1-9][0-9]{5}$")
+                // Trigger vibration as the user scrolls
+                val centerView = snapHelper.findSnapView(layoutManager)
+                val pos = if (centerView != null) layoutManager.getPosition(centerView) else -1
 
-            if (street.isEmpty() || city.isEmpty() || state.isEmpty() || zip.isEmpty()) {
-                Toast.makeText(context, "Please fill all address fields", Toast.LENGTH_SHORT).show()
-            } else if (!zip.matches(pincodeRegex)) {
-                Toast.makeText(context, "Please enter a valid 6-digit Indian pincode.", Toast.LENGTH_SHORT).show()
-            } else {
-                val newAddress = Address(street, city, state, zip)
-                viewModel.addAddress(newAddress)
-                toggleNewAddressForm(false)
-                clearAddressForm()
+                val lastPos = if (recyclerView.id == R.id.recycler_hour_picker) lastVibratedHourPos else lastVibratedMinutePos
+
+                if (pos != -1 && pos != lastPos) {
+                    vibrate()
+                    updateLastVibratedPos(pos)
+                }
             }
-        }
 
-        binding.btnPlaceOrder.setOnClickListener {
-            if (selectedPickupAddress == null) {
-                Toast.makeText(context, "Please select or add a pickup address.", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            viewModel.placeOrder(selectedPickupAddress!!)
-        }
-
-        binding.btnSelectDate.setOnClickListener { showDatePicker() }
-        binding.btnSelectTime.setOnClickListener { showTimePicker() }
-        binding.btnUseGps.setOnClickListener {
-            checkPermissionsAndFetchLocation()
-        }
-
-        binding.etZip.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                val zip = s.toString()
-                if (zip.length == 6) {
-                    val pincodeRegex = Regex("^[1-9][0-9]{5}$")
-                    if (!zip.matches(pincodeRegex)) {
-                        binding.layoutZip.error = "Invalid pincode (cannot start with 0)"
-                    } else {
-                        binding.layoutZip.error = null // Clear the error if valid
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    updatePickerItemAppearance(recyclerView, layoutManager)
+                    val centerView = snapHelper.findSnapView(layoutManager)
+                    val pos = layoutManager.getPosition(centerView!!)
+                    if (pos != RecyclerView.NO_POSITION) {
+                        onTimeSelected(data[pos])
                     }
-                } else {
-                    binding.layoutZip.error = null // Clear error while typing if length is not 6
                 }
             }
         })
+
+        // Add a listener to prevent the parent ScrollView from hijacking the scroll
+        recyclerView.addOnItemTouchListener(object : RecyclerView.OnItemTouchListener {
+            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+                if (e.action == MotionEvent.ACTION_DOWN) {
+                    binding.scrollView.requestDisallowInterceptTouchEvent(true)
+                } else if (e.action == MotionEvent.ACTION_UP || e.action == MotionEvent.ACTION_CANCEL) {
+                    binding.scrollView.requestDisallowInterceptTouchEvent(false)
+                }
+                return false
+            }
+            override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {}
+            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
+        })
+    }
+
+    private fun updatePickerItemAppearance(recyclerView: RecyclerView, layoutManager: LinearLayoutManager) {
+        val centerOfRecyclerView = recyclerView.height / 2f
+        for (i in 0 until recyclerView.childCount) {
+            val child = recyclerView.getChildAt(i)
+            val childCenter = (layoutManager.getDecoratedTop(child) + layoutManager.getDecoratedBottom(child)) / 2f
+            val distanceToCenter = abs(centerOfRecyclerView - childCenter)
+
+            val scale = (1.0f - (distanceToCenter / centerOfRecyclerView).pow(2) * 0.25f).coerceIn(0.75f, 1.0f)
+            val alpha = (1.0f - (distanceToCenter / centerOfRecyclerView).pow(2) * 0.75f).coerceIn(0.25f, 1.0f)
+
+            child.scaleX = scale
+            child.scaleY = scale
+            child.alpha = alpha
+        }
+    }
+
+    private fun updateCalendarHeader() {
+        binding.tvMonthYear.text = calendarAdapter.getMonthYear()
+        // Disable the back button if we are at the current month
+        if (calendarAdapter.isAtCurrentMonth()) {
+            binding.btnPrevMonth.isEnabled = false
+            binding.btnPrevMonth.alpha = 0.5f
+        } else {
+            binding.btnPrevMonth.isEnabled = true
+            binding.btnPrevMonth.alpha = 1.0f
+        }
+    }
+
+    private fun selectTimeSlotView(view: View) {
+        // Deselect the previously selected time slot
+        selectedTimeSlotView?.isSelected = false
+        // Select the new one
+        view.isSelected = true
+        selectedTimeSlotView = view
+    }
+
+    private fun populateOrderSummary() {
+        val format = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+        binding.tvSubtotal.text = format.format(subtotal)
+
+        if (discount > 0) {
+            binding.layoutDiscount.visibility = View.VISIBLE
+            binding.tvDiscountAmount.text = "-${format.format(discount)}"
+        } else {
+            binding.layoutDiscount.visibility = View.GONE
+        }
+
+        // Using a fixed value for delivery charges as an example
+        val deliveryCharges = 5.00
+        binding.tvDeliveryCharges.text = format.format(deliveryCharges)
+        binding.tvTotal.text = format.format(total)
     }
 
     private fun observeViewModel() {
         viewModel.currentUser.observe(viewLifecycleOwner) { user ->
-            val addresses = user?.address ?: emptyList()
-            addressAdapter.submitList(addresses)
-            if (addresses.isNotEmpty()) {
-                selectedPickupAddress = addresses.first()
-                addressAdapter.setSelectedAddress(addresses.first())
-            }
-        }
-
-        viewModel.addressListUpdated.observe(viewLifecycleOwner) { event ->
-            event.getContentIfNotHandled()?.let { updatedUser ->
-                val newAddress = updatedUser.address?.lastOrNull()
-                if (newAddress != null) {
-                    selectedPickupAddress = newAddress
-                    addressAdapter.setSelectedAddress(newAddress)
-                }
-            }
-        }
-
-        viewModel.groupedCartItems.observe(viewLifecycleOwner) { groupedItems ->
-            checkoutAdapter.submitList(groupedItems)
-        }
-
-        viewModel.placeOrderResult.observe(viewLifecycleOwner) { result ->
-            when (result) {
-                is PlaceOrderResult.Loading -> {
-                    binding.btnPlaceOrder.isEnabled = false
-                    binding.btnPlaceOrder.text = "Placing Order..."
-                }
-                is PlaceOrderResult.Success -> {
-                    parentFragmentManager.beginTransaction()
-                        .replace(R.id.fragment_container, OrderSuccessFragment.newInstance(result.order.id))
-                        .commit()
-                }
-                is PlaceOrderResult.Error -> {
-                    binding.btnPlaceOrder.isEnabled = true
-                    binding.btnPlaceOrder.text = "Place Order"
-                    Toast.makeText(context, "Failed to place order: ${result.message}", Toast.LENGTH_LONG).show()
-                }
-                is PlaceOrderResult.Idle -> {
-                    binding.btnPlaceOrder.isEnabled = true
-                    binding.btnPlaceOrder.text = "Place Order"
-                }
-            }
-        }
-
-        viewModel.cartItems.observe(viewLifecycleOwner) { updatePricing() }
-        viewModel.appliedOffer.observe(viewLifecycleOwner) { updatePricing() }
-    }
-
-    private fun setupAddressDropdowns() {
-        // Populate the States dropdown
-        val states = resources.getStringArray(R.array.india_states)
-        val statesAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, states)
-        binding.etState.setAdapter(statesAdapter)
-
-        // Populate the Cities dropdown
-        val cities = resources.getStringArray(R.array.delhi_cities)
-        val citiesAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, cities)
-        binding.etCity.setAdapter(citiesAdapter)
-    }
-
-    private fun toggleNewAddressForm(show: Boolean) {
-        binding.newAddressForm.visibility = if (show) View.VISIBLE else View.GONE
-        binding.btnAddNewAddress.visibility = if (show) View.GONE else View.VISIBLE
-    }
-
-    private fun clearAddressForm() {
-        binding.etStreet.text?.clear()
-        binding.etCity.text?.clear()
-        binding.etState.text?.clear()
-        binding.etZip.text?.clear()
-    }
-
-    private fun updatePricing() {
-        if (_binding == null) return
-        val summary = viewModel.calculateTotal()
-        binding.textSubtotal.text = String.format("₹%.2f", summary.subtotal)
-        binding.textDiscount.text = String.format("-₹%.2f", summary.discount)
-        binding.textTotal.text = String.format("₹%.2f", summary.total)
-        binding.discountRow.visibility = if (summary.discount > 0) View.VISIBLE else View.GONE
-    }
-
-    private fun showDatePicker() {
-        val listener = DatePickerDialog.OnDateSetListener { _, year, month, day ->
-            selectedDate.set(Calendar.YEAR, year)
-            selectedDate.set(Calendar.MONTH, month)
-            selectedDate.set(Calendar.DAY_OF_MONTH, day)
-            binding.textSelectedDate.text = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(selectedDate.time)
-        }
-        DatePickerDialog(requireContext(), listener,
-            selectedDate.get(Calendar.YEAR),
-            selectedDate.get(Calendar.MONTH),
-            selectedDate.get(Calendar.DAY_OF_MONTH)).show()
-    }
-
-    private fun showTimePicker() {
-        val listener = TimePickerDialog.OnTimeSetListener { _, hour, minute ->
-            selectedTime.set(Calendar.HOUR_OF_DAY, hour)
-            selectedTime.set(Calendar.MINUTE, minute)
-            binding.textSelectedTime.text = SimpleDateFormat("hh:mm a", Locale.US).format(selectedTime.time)
-        }
-        TimePickerDialog(requireContext(), listener,
-            selectedTime.get(Calendar.HOUR_OF_DAY),
-            selectedTime.get(Calendar.MINUTE),
-            false).show()
-    }
-
-    private fun checkPermissionsAndFetchLocation() {
-        when {
-            ContextCompat.checkSelfPermission(
-                requireContext(), Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED -> {
-                getCurrentLocation()
-            }
-            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) -> {
-                Toast.makeText(requireContext(), "Location permission is needed to use GPS.", Toast.LENGTH_LONG).show()
-                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            }
-            else -> {
-                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            // Display the first address as the selected one
+            user?.address?.firstOrNull()?.let { address ->
+                binding.tvAddress.text = "${address.street}, ${address.city}, ${address.state} ${address.zip}"
             }
         }
     }
 
-    private fun getCurrentLocation() {
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return
+    private fun setupClickListeners() {
+        binding.btnChangeAddress.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, ManageAddressesFragment())
+                .addToBackStack(null)
+                .commit()
         }
-        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-            if (location != null) {
-                reverseGeocodeLocation(location)
+
+        binding.btnChangePayment.setOnClickListener {
+            // TODO: Navigate to a payment selection screen
+            Toast.makeText(context, "Change Payment Clicked", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.btnPlaceOrder.setOnClickListener {
+            if (isTimeInServiceHours()) {
+                Toast.makeText(context, "Order Placed!", Toast.LENGTH_SHORT).show()
+                // TODO: Implement actual order placement logic
             } else {
-                Toast.makeText(requireContext(), "Could not retrieve location. Please ensure GPS is enabled.", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Please select a time between 09:00 and 18:00.", Toast.LENGTH_LONG).show()
             }
         }
     }
 
-    private fun reverseGeocodeLocation(location: android.location.Location) {
-        val geocoder = Geocoder(requireContext(), Locale.getDefault())
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-                val geocodedAddress = addresses?.firstOrNull()
+    private fun isTimeInServiceHours(): Boolean {
+        // Service hours are 09:00 to 18:00
+        return selectedHour >= 9.toString() && (selectedHour < 18.toString() || (selectedHour == 18.toString() && selectedMinute == 0.toString()))
+    }
 
-                withContext(Dispatchers.Main) {
-                    if (geocodedAddress != null) {
-                        binding.etStreet.setText(geocodedAddress.thoroughfare)
-                        binding.etCity.setText(geocodedAddress.locality)
-                        binding.etState.setText(geocodedAddress.adminArea)
-                        binding.etZip.setText(geocodedAddress.postalCode)
-                    } else {
-                        Toast.makeText(requireContext(), "Address not found for this location.", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(requireContext(), "Error fetching address.", Toast.LENGTH_SHORT).show()
-                }
-            }
+    private fun vibrate() {
+        val vibrator = context?.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Use the predefined TICK effect for a crisp, clean haptic feedback
+            vibrator?.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK))
+        } else {
+            // Fallback for older APIs
+            @Suppress("DEPRECATION")
+            vibrator?.vibrate(50)
         }
     }
 
@@ -325,4 +281,21 @@ class CheckoutFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
+
+    companion object {
+        private const val ARG_SUBTOTAL = "subtotal"
+        private const val ARG_DISCOUNT = "discount"
+        private const val ARG_TOTAL = "total"
+
+        @JvmStatic
+        fun newInstance(subtotal: Double, discount: Double, total: Double) =
+            CheckoutFragment().apply {
+                arguments = Bundle().apply {
+                    putDouble(ARG_SUBTOTAL, subtotal)
+                    putDouble(ARG_DISCOUNT, discount)
+                    putDouble(ARG_TOTAL, total)
+                }
+            }
+    }
 }
+

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/tv_time_slot"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_time_slot_selector"
+    android:textColor="@color/time_slot_text_color"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="12dp"
+    android:layout_margin="4dp"
+    android:textAppearance="?attr/textAppearanceBodyLarge"
+    tools:text="8am - 10am" />
